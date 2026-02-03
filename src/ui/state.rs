@@ -36,6 +36,8 @@ pub enum Mode {
     ErrorDialog,
     /// About dialog mode.
     About,
+    /// Add feed mode - selecting folder.
+    AddFeedFolder,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -108,6 +110,15 @@ pub struct UiState {
     /// Whether currently discovering feeds (loading state).
     pub discovering: bool,
 
+    /// Selected folder index for new feed (None = root, Some = folder index).
+    pub add_feed_folder_index: Option<usize>,
+
+    /// New folder name being created.
+    pub add_feed_new_folder: String,
+
+    /// Whether creating a new folder.
+    pub creating_new_folder: bool,
+
     // --- Delete confirmation state ---
     /// Feed index pending deletion (for confirmation).
     pub pending_delete_feed: Option<usize>,
@@ -157,6 +168,9 @@ impl UiState {
         self.discovered_feed_index = 0;
         self.add_feed_name.clear();
         self.discovering = false;
+        self.add_feed_folder_index = None;
+        self.add_feed_new_folder.clear();
+        self.creating_new_folder = false;
     }
 
     /// Reset delete confirmation state.

@@ -607,12 +607,106 @@ impl App {
                             .border_style(Style::default().fg(accent))
                             .border_type(BorderType::Rounded)
                             .title(" Name (optional) ")
-                            .title_bottom(Line::from(" ↵ add feed │ Esc back ").centered()),
+                            .title_bottom(Line::from(" ↵ next │ Esc back ").centered()),
                     );
                 frame.render_widget(input, layout[1]);
             }
 
+            Mode::AddFeedFolder => {
+                // Folder selection mode
+                self.render_folder_selection(frame, popup_area);
+            }
+
             _ => {}
+        }
+    }
+
+    fn render_folder_selection(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let muted = self.theme.muted();
+        let fg = self.theme.fg();
+
+        if self.ui.creating_new_folder {
+            // New folder name input
+            let layout = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(3), // Title
+                    Constraint::Length(3), // Input
+                    Constraint::Min(0),    // Padding
+                ])
+                .split(area);
+
+            let title = Paragraph::new("\n  Enter a name for the new folder:")
+                .style(Style::default().fg(muted))
+                .block(Block::default());
+            frame.render_widget(title, layout[0]);
+
+            let input = Paragraph::new(format!(" 📁 {}│", self.ui.add_feed_new_folder))
+                .style(Style::default().fg(accent))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(Style::default().fg(accent))
+                        .border_type(BorderType::Rounded)
+                        .title(" New Folder Name ")
+                        .title_bottom(Line::from(" ↵ create │ Esc cancel ").centered()),
+                );
+            frame.render_widget(input, layout[1]);
+        } else {
+            // Folder list
+            let folder_count = self.config.folders.len();
+            let current_index = match self.ui.add_feed_folder_index {
+                None => 0,
+                Some(usize::MAX) => folder_count + 1,
+                Some(i) => i + 1,
+            };
+
+            let mut items: Vec<ListItem> = Vec::new();
+
+            // Root option (no folder)
+            let selected = current_index == 0;
+            let prefix = if selected { "▸" } else { " " };
+            let style = if selected {
+                Style::default().fg(accent).bold()
+            } else {
+                Style::default().fg(fg)
+            };
+            items.push(ListItem::new(format!("  {prefix} 🏠 Root (no folder)")).style(style));
+
+            // Existing folders
+            for (i, folder) in self.config.folders.iter().enumerate() {
+                let selected = current_index == i + 1;
+                let prefix = if selected { "▸" } else { " " };
+                let icon = folder.icon.as_deref().unwrap_or("📁");
+                let style = if selected {
+                    Style::default().fg(accent).bold()
+                } else {
+                    Style::default().fg(fg)
+                };
+                items
+                    .push(ListItem::new(format!("  {prefix} {icon} {}", folder.name)).style(style));
+            }
+
+            // New folder option
+            let selected = current_index == folder_count + 1;
+            let prefix = if selected { "▸" } else { " " };
+            let style = if selected {
+                Style::default().fg(accent).bold()
+            } else {
+                Style::default().fg(muted).italic()
+            };
+            items.push(ListItem::new(format!("  {prefix} ➕ Create new folder...")).style(style));
+
+            let list = List::new(items).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(accent))
+                    .border_type(BorderType::Rounded)
+                    .title(" 📁 Select Folder ")
+                    .title_bottom(Line::from(" ↑↓ select │ ↵ confirm │ Esc back ").centered()),
+            );
+            frame.render_widget(list, area);
         }
     }
 

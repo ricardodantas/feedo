@@ -26,7 +26,8 @@ impl App {
             super::Mode::ThemePicker => self.handle_theme_picker_key(key),
             super::Mode::AddFeedUrl => self.handle_add_feed_url_key(key).await,
             super::Mode::AddFeedSelect => self.handle_add_feed_select_key(key),
-            super::Mode::AddFeedName => self.handle_add_feed_name_key(key).await,
+            super::Mode::AddFeedName => self.handle_add_feed_name_key(key),
+            super::Mode::AddFeedFolder => self.handle_add_feed_folder_key(key).await,
             super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key),
             super::Mode::ErrorDialog => self.handle_error_dialog_key(key),
             super::Mode::About => self.handle_about_key(key),
@@ -239,14 +240,15 @@ impl App {
         KeyResult::Continue
     }
 
-    async fn handle_add_feed_name_key(&mut self, key: KeyCode) -> KeyResult {
+    fn handle_add_feed_name_key(&mut self, key: KeyCode) -> KeyResult {
         match key {
             KeyCode::Esc => {
                 // Go back to feed selection
                 self.ui.mode = super::Mode::AddFeedSelect;
             }
             KeyCode::Enter => {
-                self.add_discovered_feed().await;
+                // Go to folder selection
+                self.ui.mode = super::Mode::AddFeedFolder;
             }
             KeyCode::Backspace => {
                 self.ui.add_feed_name.pop();
@@ -255,6 +257,95 @@ impl App {
                 self.ui.add_feed_name.push(c);
             }
             _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Handle keys in folder selection mode.
+    async fn handle_add_feed_folder_key(&mut self, key: KeyCode) -> KeyResult {
+        let folder_count = self.config.folders.len();
+        // Options: None (root), Some(0..folder_count-1) for existing folders, or "new folder"
+        // We represent this as: 0 = root, 1..=folder_count = existing folders, folder_count+1 = new folder
+        let total_options = folder_count + 2; // root + folders + "new folder"
+
+        if self.ui.creating_new_folder {
+            // Creating a new folder - text input mode
+            match key {
+                KeyCode::Esc => {
+                    self.ui.creating_new_folder = false;
+                    self.ui.add_feed_new_folder.clear();
+                }
+                KeyCode::Enter => {
+                    if !self.ui.add_feed_new_folder.is_empty() {
+                        // Create the folder and select it
+                        let new_folder = crate::config::FolderConfig {
+                            name: self.ui.add_feed_new_folder.clone(),
+                            icon: Some("📁".to_string()),
+                            expanded: true,
+                            feeds: vec![],
+                        };
+                        self.config.folders.push(new_folder);
+                        self.ui.add_feed_folder_index = Some(self.config.folders.len() - 1);
+                        self.ui.creating_new_folder = false;
+                        self.ui.add_feed_new_folder.clear();
+                        // Now add the feed
+                        self.add_discovered_feed().await;
+                    }
+                }
+                KeyCode::Backspace => {
+                    self.ui.add_feed_new_folder.pop();
+                }
+                KeyCode::Char(c) => {
+                    self.ui.add_feed_new_folder.push(c);
+                }
+                _ => {}
+            }
+        } else {
+            // Folder selection mode
+            let current_index = self.ui.add_feed_folder_index.map_or(0, |i| i + 1);
+
+            match key {
+                KeyCode::Esc => {
+                    // Go back to name input
+                    self.ui.mode = super::Mode::AddFeedName;
+                }
+                KeyCode::Char('j') | KeyCode::Down => {
+                    let new_index = (current_index + 1) % total_options;
+                    self.ui.add_feed_folder_index = if new_index == 0 {
+                        None
+                    } else if new_index <= folder_count {
+                        Some(new_index - 1)
+                    } else {
+                        // "New folder" option - keep as last folder + 1 marker
+                        Some(usize::MAX)
+                    };
+                }
+                KeyCode::Char('k') | KeyCode::Up => {
+                    let new_index = if current_index == 0 {
+                        total_options - 1
+                    } else {
+                        current_index - 1
+                    };
+                    self.ui.add_feed_folder_index = if new_index == 0 {
+                        None
+                    } else if new_index <= folder_count {
+                        Some(new_index - 1)
+                    } else {
+                        Some(usize::MAX)
+                    };
+                }
+                KeyCode::Enter => {
+                    if self.ui.add_feed_folder_index == Some(usize::MAX) {
+                        // "New folder" selected - start creating
+                        self.ui.creating_new_folder = true;
+                        self.ui.add_feed_new_folder.clear();
+                    } else {
+                        // Add the feed to selected folder (or root)
+                        self.add_discovered_feed().await;
+                    }
+                }
+                _ => {}
+            }
         }
         KeyResult::Continue
     }
@@ -318,11 +409,26 @@ impl App {
 
         let url = discovered.url.clone();
 
-        // Add to config
-        self.config.feeds.push(FeedConfig {
+        let feed_config = FeedConfig {
             name: name.clone(),
             url: url.clone(),
-        });
+        };
+
+        // Add to folder if one is selected, otherwise add to root feeds
+        match self.ui.add_feed_folder_index {
+            Some(folder_idx) if folder_idx != usize::MAX => {
+                // Add to existing folder
+                if let Some(folder) = self.config.folders.get_mut(folder_idx) {
+                    folder.feeds.push(feed_config);
+                } else {
+                    self.config.feeds.push(feed_config);
+                }
+            }
+            _ => {
+                // Add to root (no folder) or usize::MAX case
+                self.config.feeds.push(feed_config);
+            }
+        }
 
         // Save config
         if let Err(e) = self.config.save() {
