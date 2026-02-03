@@ -42,6 +42,7 @@
 //! - [`config`] — Configuration management and persistence
 //! - [`feed`] — Feed fetching, parsing, and state management
 //! - [`opml`] — OPML import/export for feed migration
+//! - [`sync`] — Sync with FreshRSS, Miniflux via Google Reader API
 //! - [`theme`] — UI theming with 15 popular color schemes
 //! - [`ui`] — Terminal UI rendering and input handling
 //!
@@ -77,6 +78,7 @@ pub mod config;
 pub mod error_report;
 pub mod feed;
 pub mod opml;
+pub mod sync;
 pub mod theme;
 pub mod ui;
 
@@ -88,4 +90,5 @@ pub use feed::{
     CacheStats, CachedFeed, CachedItem, DiscoveredFeed, Feed, FeedCache, FeedDiscovery, FeedItem,
     FeedManager, FeedType,
 };
+pub use sync::{GReaderClient, SyncConfig, SyncProvider};
 pub use theme::{Theme, ThemeName, ThemePalette};

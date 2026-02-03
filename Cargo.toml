@@ -24,7 +24,7 @@ crossterm = "0.29"
 feed-rs = "2.3"
 
 # HTTP client
-reqwest = { version = "0.13", default-features = false, features = ["rustls", "charset"] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls", "charset", "form", "json"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
