@@ -496,6 +496,8 @@ impl App {
                 }
             }
             super::Panel::Items => {
+                // Mark item as read when opening
+                self.mark_current_read();
                 self.ui.show_content = true;
                 self.ui.panel = super::Panel::Content;
                 self.ui.scroll_offset = 0;
@@ -516,12 +518,14 @@ impl App {
         }
     }
 
-    fn open_link(&self) {
+    fn open_link(&mut self) {
         if let Some(item) = self.selected_item() {
             if let Some(link) = &item.link {
                 let _ = open::that(link);
             }
         }
+        // Mark as read when opening in browser
+        self.mark_current_read();
     }
 
     fn toggle_read(&mut self) {
@@ -531,6 +535,16 @@ impl App {
                     if let Some(item) = feed.items.get_mut(self.ui.selected_item) {
                         item.toggle_read();
                     }
+                }
+            }
+        }
+    }
+
+    fn mark_current_read(&mut self) {
+        if let Some(feed_idx) = self.ui.selected_feed {
+            if let Some(feed) = self.feeds.feeds.get_mut(feed_idx) {
+                if let Some(item) = feed.items.get_mut(self.ui.selected_item) {
+                    item.mark_read();
                 }
             }
         }
