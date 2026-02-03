@@ -47,6 +47,7 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 | 🎨 **Beautiful TUI** | Clean three-panel interface with rounded borders and smooth navigation |
 | 🔍 **Feed Discovery** | Auto-detect RSS/Atom feeds from any URL — just paste a website |
 | 📴 **Offline Mode** | Articles cached locally — read without internet, read states persist |
+| ☁️ **Cloud Sync** | Sync with FreshRSS, Miniflux, Inoreader via Google Reader API |
 | 📁 **Smart Folders** | Organize feeds into collapsible folders with custom emoji icons |
 | 🔎 **Instant Search** | Find articles across all feeds with real-time filtering |
 | 🎭 **15 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
@@ -113,6 +114,21 @@ feedo --export backup.opml
 feedo --help
 ```
 
+### Sync Commands
+
+```bash
+# Configure sync with your server
+feedo sync login <server> <username> <password>
+
+# Check sync status
+feedo sync status
+
+# Run full sync (import feeds + sync read states)
+feedo sync
+```
+
+**Tip:** Once configured, press `S` in the TUI to sync without leaving the app!
+
 ### Adding Feeds
 
 Press `n` in the app to add a new feed. Just paste any URL — Feedo will auto-discover the RSS/Atom feed:
@@ -159,6 +175,7 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `n` | Add new feed (with auto-discovery) |
 | `d` / `Delete` | Delete selected feed |
 | `r` | Refresh all feeds |
+| `S` | Sync with server (if configured) |
 | `o` | Open article in browser |
 | `s` | Share article |
 | `Space` | Toggle read/unread |
@@ -282,6 +299,63 @@ Feedo automatically caches all articles for offline reading:
 
 **No configuration needed** — offline mode works automatically!
 
+### ☁️ Cloud Sync
+
+Feedo supports syncing with self-hosted RSS servers that implement the **Google Reader API**:
+
+| Service | Server URL Format |
+|---------|-------------------|
+| **FreshRSS** | `https://your-server/api/greader.php` |
+| **Miniflux** | `https://your-server/v1/` |
+| **Inoreader** | `https://www.inoreader.com` |
+| **The Old Reader** | `https://theoldreader.com` |
+| **BazQux** | `https://bazqux.com` |
+
+#### Setup
+
+```bash
+# Configure your sync server
+feedo sync login https://freshrss.example.com/api/greader.php myuser mypassword
+
+# Verify connection
+feedo sync status
+```
+
+#### What syncs?
+
+| Direction | What |
+|-----------|------|
+| **Server → Local** | Subscriptions (feeds + folders) |
+| **Server → Local** | Read states |
+| **Local → Server** | Read states |
+
+#### Running Sync
+
+**From CLI:**
+```bash
+feedo sync
+```
+
+**From TUI:**  
+Press `S` (shift+s) — the status bar shows a ☁️ indicator when sync is configured.
+
+#### Config Example
+
+After running `feedo sync login`, your config will include:
+
+```json
+{
+  "sync": {
+    "provider": "freshrss",
+    "server": "https://freshrss.example.com/api/greader.php",
+    "username": "myuser",
+    "password": "mypassword"
+  }
+}
+```
+
+**Note:** For security, consider using an API password or app-specific password if your service supports it.
+
 ### Theme Colors
 
 Feedo comes with **15 popular themes** from the terminal/editor world:
@@ -365,9 +439,9 @@ src/
 
 - [x] **Feed Discovery** — Auto-detect RSS from any URL ✅
 - [x] **Offline Mode** — Cache articles for reading without internet ✅
+- [x] **Cloud Sync** — Sync with FreshRSS, Miniflux via Google Reader API ✅
 - [ ] **Custom Keybindings** — Full key remapping
 - [ ] **Notifications** — Desktop alerts for new articles
-- [ ] **Sync** — Optional cloud sync via your own backend
 
 <br>
 
