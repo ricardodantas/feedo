@@ -27,6 +27,7 @@ impl App {
             super::Mode::AddFeedUrl => self.handle_add_feed_url_key(key).await,
             super::Mode::AddFeedSelect => self.handle_add_feed_select_key(key),
             super::Mode::AddFeedName => self.handle_add_feed_name_key(key).await,
+            super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -333,7 +334,7 @@ impl App {
         self.ui.mode = super::Mode::Normal;
     }
 
-    /// Delete the currently selected feed.
+    /// Prompt for delete confirmation.
     fn delete_selected_feed(&mut self) {
         // Only delete if we're in the Feeds panel and have a feed selected
         if !matches!(self.ui.panel, super::Panel::Feeds) {
@@ -346,7 +347,34 @@ impl App {
             return;
         };
 
-        // Get the feed name for confirmation message
+        // Store the feed index and switch to confirmation mode
+        self.ui.pending_delete_feed = Some(feed_idx);
+        self.ui.mode = super::Mode::ConfirmDelete;
+    }
+
+    /// Handle keys in delete confirmation mode.
+    fn handle_confirm_delete_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Char('y') | KeyCode::Char('Y') => {
+                self.perform_delete();
+            }
+            KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                self.ui.reset_delete();
+                self.ui.mode = super::Mode::Normal;
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Actually delete the feed after confirmation.
+    fn perform_delete(&mut self) {
+        let Some(feed_idx) = self.ui.pending_delete_feed else {
+            self.ui.mode = super::Mode::Normal;
+            return;
+        };
+
+        // Get the feed name for status message
         let feed_name = self
             .feeds
             .feeds
@@ -383,6 +411,8 @@ impl App {
         // Save config
         if let Err(e) = self.config.save() {
             self.ui.set_error(format!("Failed to save: {e}"));
+            self.ui.reset_delete();
+            self.ui.mode = super::Mode::Normal;
             return;
         }
 
@@ -394,6 +424,8 @@ impl App {
         self.rebuild_feed_list();
         self.select_first_feed();
         self.ui.set_status(format!("Deleted: {feed_name}"));
+        self.ui.reset_delete();
+        self.ui.mode = super::Mode::Normal;
     }
 
     const fn next_panel(&mut self) {

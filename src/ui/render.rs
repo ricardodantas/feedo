@@ -72,6 +72,10 @@ impl App {
             self.render_add_feed_overlay(frame, area);
         }
 
+        if self.ui.mode == Mode::ConfirmDelete {
+            self.render_delete_confirmation(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -602,6 +606,55 @@ impl App {
 
             _ => {}
         }
+    }
+
+    fn render_delete_confirmation(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let muted = self.theme.muted();
+        let popup_area = centered_rect(50, 25, area);
+
+        frame.render_widget(Clear, popup_area);
+
+        let feed_name = self
+            .ui
+            .pending_delete_feed
+            .and_then(|idx| self.feeds.feeds.get(idx))
+            .map(|f| f.name.as_str())
+            .unwrap_or("this feed");
+
+        let text = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("Delete \"{feed_name}\"?"),
+                Style::default().fg(accent).bold(),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                "This will remove the feed from your subscriptions.",
+                Style::default().fg(muted),
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" [Y] ", Style::default().fg(accent).bold()),
+                Span::raw("Yes, delete"),
+                Span::raw("    "),
+                Span::styled(" [N] ", Style::default().fg(muted)),
+                Span::raw("Cancel"),
+            ]),
+        ];
+
+        let paragraph = Paragraph::new(text)
+            .alignment(ratatui::layout::Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(accent))
+                    .title(" ⚠️  Confirm Delete ")
+                    .title_style(Style::default().fg(accent).bold()),
+            );
+
+        frame.render_widget(paragraph, popup_area);
     }
 }
 

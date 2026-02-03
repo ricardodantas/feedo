@@ -30,6 +30,8 @@ pub enum Mode {
     AddFeedSelect,
     /// Add feed mode - entering custom name.
     AddFeedName,
+    /// Confirm delete mode.
+    ConfirmDelete,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -101,6 +103,10 @@ pub struct UiState {
 
     /// Whether currently discovering feeds (loading state).
     pub discovering: bool,
+
+    // --- Delete confirmation state ---
+    /// Feed index pending deletion (for confirmation).
+    pub pending_delete_feed: Option<usize>,
 }
 
 impl UiState {
@@ -131,5 +137,10 @@ impl UiState {
         self.discovered_feed_index = 0;
         self.add_feed_name.clear();
         self.discovering = false;
+    }
+
+    /// Reset delete confirmation state.
+    pub fn reset_delete(&mut self) {
+        self.pending_delete_feed = None;
     }
 }
