@@ -14,7 +14,7 @@ pub const REPO_URL: &str = "https://github.com/ricardodantas/feedo";
 #[must_use]
 pub fn create_issue_url(error: &str, context: Option<&str>) -> String {
     let title = urlencoding::encode("[Bug]: Application Error");
-    
+
     let body = format!(
         "## Error Message\n\
         ```\n{error}\n```\n\n\
@@ -31,9 +31,9 @@ pub fn create_issue_url(error: &str, context: Option<&str>) -> String {
         (add any other relevant details)",
         context.unwrap_or("(not provided)")
     );
-    
+
     let encoded_body = urlencoding::encode(&body);
-    
+
     format!("{REPO_URL}/issues/new?title={title}&body={encoded_body}&labels=bug,triage")
 }
 
@@ -44,5 +44,5 @@ pub fn create_issue_url(error: &str, context: Option<&str>) -> String {
 /// Returns an error if the browser cannot be opened.
 pub fn open_issue(error: &str, context: Option<&str>) -> Result<(), std::io::Error> {
     let url = create_issue_url(error, context);
-    open::that(&url).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+    open::that(&url).map_err(std::io::Error::other)
 }

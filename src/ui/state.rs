@@ -158,7 +158,7 @@ impl UiState {
     }
 
     /// Reset delete confirmation state.
-    pub fn reset_delete(&mut self) {
+    pub const fn reset_delete(&mut self) {
         self.pending_delete_feed = None;
     }
 }

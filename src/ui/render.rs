@@ -623,8 +623,7 @@ impl App {
             .ui
             .pending_delete_feed
             .and_then(|idx| self.feeds.feeds.get(idx))
-            .map(|f| f.name.as_str())
-            .unwrap_or("this feed");
+            .map_or("this feed", |f| f.name.as_str());
 
         let text = vec![
             Line::from(""),
@@ -673,8 +672,7 @@ impl App {
             .ui
             .error_dialog
             .as_ref()
-            .map(|(e, c)| (e.as_str(), c.as_deref()))
-            .unwrap_or(("Unknown error", None));
+            .map_or(("Unknown error", None), |(e, c)| (e.as_str(), c.as_deref()));
 
         // Truncate error message if too long
         let max_error_len = (popup_area.width as usize).saturating_sub(6);
@@ -691,10 +689,7 @@ impl App {
                 Style::default().fg(error_color).bold(),
             )),
             Line::from(""),
-            Line::from(Span::styled(
-                truncated_error,
-                Style::default().fg(muted),
-            )),
+            Line::from(Span::styled(truncated_error, Style::default().fg(muted))),
         ];
 
         if let Some(ctx) = context {

@@ -361,10 +361,10 @@ impl App {
     /// Handle keys in delete confirmation mode.
     fn handle_confirm_delete_key(&mut self, key: KeyCode) -> KeyResult {
         match key {
-            KeyCode::Char('y') | KeyCode::Char('Y') => {
+            KeyCode::Char('y' | 'Y') => {
                 self.perform_delete();
             }
-            KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+            KeyCode::Char('n' | 'N') | KeyCode::Esc => {
                 self.ui.reset_delete();
                 self.ui.mode = super::Mode::Normal;
             }
@@ -376,14 +376,14 @@ impl App {
     /// Handle keys in error dialog mode.
     fn handle_error_dialog_key(&mut self, key: KeyCode) -> KeyResult {
         match key {
-            KeyCode::Char('r') | KeyCode::Char('R') => {
+            KeyCode::Char('r' | 'R') => {
                 // Report bug on GitHub
                 if let Some((error, context)) = &self.ui.error_dialog {
                     let _ = crate::error_report::open_issue(error, context.as_deref());
                 }
                 self.ui.close_error_dialog();
             }
-            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('c') | KeyCode::Char('C') => {
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('c' | 'C') => {
                 self.ui.close_error_dialog();
             }
             _ => {}
