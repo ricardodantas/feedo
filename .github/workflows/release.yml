@@ -4,11 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        description: 'Version bump type'
+        description: 'Version bump type (none = release current version)'
         required: true
-        default: 'patch'
+        default: 'none'
         type: choice
         options:
+          - none
           - patch
           - minor
           - major
@@ -34,6 +35,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-edit
+        if: inputs.bump != 'none'
         run: cargo install cargo-edit
 
       - name: Configure Git
@@ -48,20 +50,28 @@ jobs:
           CURRENT=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
           echo "Current version: $CURRENT"
           
-          # Bump version
-          cargo set-version --bump ${{ inputs.bump }}
+          if [ "${{ inputs.bump }}" = "none" ]; then
+            echo "Releasing current version without bump"
+            NEW="$CURRENT"
+          else
+            # Bump version
+            cargo set-version --bump ${{ inputs.bump }}
+            NEW=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
+            echo "New version: $NEW"
+          fi
           
-          # Get new version
-          NEW=$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')
-          echo "New version: $NEW"
           echo "version=$NEW" >> $GITHUB_OUTPUT
 
       - name: Commit version bump
+        if: inputs.bump != 'none'
         run: |
           git add Cargo.toml Cargo.lock
           git commit -m "chore: bump version to ${{ steps.bump.outputs.version }}"
+
+      - name: Create and push tag
+        run: |
           git tag "v${{ steps.bump.outputs.version }}"
-          git push origin master --tags
+          git push origin main --tags
 
   build:
     name: Build (${{ matrix.target }})
