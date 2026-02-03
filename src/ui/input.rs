@@ -706,11 +706,31 @@ impl App {
     fn open_link(&mut self) {
         if let Some(item) = self.selected_item() {
             if let Some(link) = &item.link {
-                if let Err(e) = open::that(link) {
-                    self.ui.show_error_dialog(
-                        "Failed to open browser",
-                        Some(format!("Error: {e}\n\nURL: {link}")),
-                    );
+                // Check if we can actually open a browser (need display on Linux)
+                let can_open_browser = cfg!(not(target_os = "linux"))
+                    || std::env::var("DISPLAY").is_ok()
+                    || std::env::var("WAYLAND_DISPLAY").is_ok();
+
+                let browser_opened = can_open_browser && open::that(link).is_ok();
+
+                if !browser_opened {
+                    // Try to copy to clipboard instead
+                    match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(link)) {
+                        Ok(()) => {
+                            self.ui.show_error_dialog(
+                                "Link copied to clipboard",
+                                Some(format!(
+                                    "Could not open browser, but the link has been copied to your clipboard.\n\n{link}"
+                                )),
+                            );
+                        }
+                        Err(clip_err) => {
+                            self.ui.show_error_dialog(
+                                "Failed to open browser or copy to clipboard",
+                                Some(format!("Clipboard error: {clip_err}\n\nURL: {link}")),
+                            );
+                        }
+                    }
                     return;
                 }
             } else {
@@ -901,8 +921,15 @@ impl App {
             _ => "Unknown",
         };
 
-        if let Err(_e) = open::that(&share_url) {
-            // Browser failed - try to copy to clipboard instead
+        // Check if we can actually open a browser (need display on Linux)
+        let can_open_browser = cfg!(not(target_os = "linux"))
+            || std::env::var("DISPLAY").is_ok()
+            || std::env::var("WAYLAND_DISPLAY").is_ok();
+
+        let browser_opened = can_open_browser && open::that(&share_url).is_ok();
+
+        if !browser_opened {
+            // Browser failed or not available - copy to clipboard instead
             match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(&share_url)) {
                 Ok(()) => {
                     self.ui.show_error_dialog(
