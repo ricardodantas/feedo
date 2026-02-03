@@ -5,6 +5,7 @@ use std::{env, fs, path::PathBuf};
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
+use crate::sync::SyncConfig;
 use crate::theme::Theme;
 
 /// Application configuration.
@@ -25,6 +26,10 @@ pub struct Config {
     /// Refresh interval in minutes (0 = manual only).
     #[serde(default = "default_refresh_interval")]
     pub refresh_interval: u32,
+
+    /// Sync configuration (optional).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sync: Option<SyncConfig>,
 }
 
 /// A folder containing multiple feeds.
@@ -95,6 +100,7 @@ impl Default for Config {
             feeds: vec![],
             theme: Theme::default(),
             refresh_interval: default_refresh_interval(),
+            sync: None,
         }
     }
 }

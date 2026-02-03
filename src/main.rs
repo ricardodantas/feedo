@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use color_eyre::Result;
 use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
-use feedo::{App, Config};
+use feedo::{App, Config, GReaderClient, SyncConfig, SyncProvider};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -23,6 +23,11 @@ async fn main() -> Result<()> {
         Command::Run => run_tui().await,
         Command::Import(path) => import_opml(&path),
         Command::Export(path) => export_opml(&path),
+        Command::Sync => sync_feeds().await,
+        Command::SyncLogin { server, username, password, provider } => {
+            sync_login(&server, &username, &password, provider).await
+        }
+        Command::SyncStatus => sync_status().await,
         Command::Help => {
             print_help();
             Ok(())
@@ -39,6 +44,14 @@ enum Command {
     Run,
     Import(PathBuf),
     Export(PathBuf),
+    Sync,
+    SyncLogin {
+        server: String,
+        username: String,
+        password: String,
+        provider: SyncProvider,
+    },
+    SyncStatus,
     Help,
     Version,
 }
@@ -65,6 +78,44 @@ fn parse_args() -> Result<Command> {
                 .ok_or_else(|| color_eyre::eyre::eyre!("Missing output file path"))?;
             Ok(Command::Export(PathBuf::from(path)))
         }
+        "sync" => {
+            if args.len() > 2 {
+                match args[2].as_str() {
+                    "login" => {
+                        // Parse: feedo sync login <server> <username> <password> [--provider freshrss|miniflux|greader]
+                        let server = args.get(3)
+                            .ok_or_else(|| color_eyre::eyre::eyre!("Missing server URL\nUsage: feedo sync login <server> <username> <password>"))?
+                            .clone();
+                        let username = args.get(4)
+                            .ok_or_else(|| color_eyre::eyre::eyre!("Missing username"))?
+                            .clone();
+                        let password = args.get(5)
+                            .ok_or_else(|| color_eyre::eyre::eyre!("Missing password"))?
+                            .clone();
+                        
+                        // Check for --provider flag
+                        let mut provider = SyncProvider::GReader;
+                        for (i, arg) in args.iter().enumerate() {
+                            if arg == "--provider" {
+                                if let Some(p) = args.get(i + 1) {
+                                    provider = match p.to_lowercase().as_str() {
+                                        "freshrss" => SyncProvider::FreshRSS,
+                                        "miniflux" => SyncProvider::Miniflux,
+                                        _ => SyncProvider::GReader,
+                                    };
+                                }
+                            }
+                        }
+                        
+                        Ok(Command::SyncLogin { server, username, password, provider })
+                    }
+                    "status" => Ok(Command::SyncStatus),
+                    _ => Ok(Command::Sync),
+                }
+            } else {
+                Ok(Command::Sync)
+            }
+        }
         other => Err(color_eyre::eyre::eyre!(
             "Unknown option: {other}\nRun 'feedo --help' for usage"
         )),
@@ -82,12 +133,23 @@ A stunning terminal RSS reader — your news, your way.
 
 USAGE:
     feedo [OPTIONS]
+    feedo sync [COMMAND]
 
 OPTIONS:
     -i, --import <FILE>    Import feeds from OPML file
     -e, --export <FILE>    Export feeds to OPML file
     -h, --help             Show this help message
     -v, --version          Show version information
+
+SYNC COMMANDS:
+    feedo sync                             Sync with configured server
+    feedo sync login <server> <user> <pw>  Configure sync server
+    feedo sync status                      Show sync configuration
+
+    Supported providers: FreshRSS, Miniflux, Inoreader, The Old Reader
+
+    Example:
+      feedo sync login https://rss.example.com/api/greader.php user pass
 
 KEYBINDINGS:
     Navigation
@@ -150,5 +212,120 @@ fn export_opml(path: &Path) -> Result<()> {
     let config = Config::load()?;
     feedo::opml::export(&config, path)?;
     println!("(◕ᴥ◕) Exported feeds to {}", path.display());
+    Ok(())
+}
+
+async fn sync_login(server: &str, username: &str, password: &str, provider: SyncProvider) -> Result<()> {
+    println!("(◕ᴥ◕) Connecting to {}...", server);
+    
+    // Test the connection
+    let client = GReaderClient::new(server);
+    let auth = client.login(username, password).await?;
+    
+    // Verify by fetching user info
+    let user_info = client.user_info(&auth).await?;
+    println!("✓ Logged in as: {}", user_info.user_name);
+    
+    // Fetch subscription count
+    let subs = client.subscriptions(&auth).await?;
+    println!("✓ Found {} subscriptions", subs.len());
+    
+    // Save to config
+    let mut config = Config::load()?;
+    config.sync = Some(SyncConfig {
+        provider,
+        server: server.to_string(),
+        username: username.to_string(),
+        password: Some(password.to_string()),
+    });
+    config.save()?;
+    
+    println!("\n(◕ᴥ◕) Sync configured! Run 'feedo sync' to sync your feeds.");
+    Ok(())
+}
+
+async fn sync_status() -> Result<()> {
+    let config = Config::load()?;
+    
+    match &config.sync {
+        Some(sync) => {
+            println!("(◕ᴥ◕) Sync Configuration\n");
+            println!("  Provider: {:?}", sync.provider);
+            println!("  Server:   {}", sync.server);
+            println!("  Username: {}", sync.username);
+            println!("  Password: {}", if sync.password.is_some() { "****" } else { "(not set)" });
+            
+            // Try to connect and show stats
+            if sync.password.is_some() {
+                println!("\nTesting connection...");
+                let client = GReaderClient::new(&sync.server);
+                match client.login(&sync.username, sync.password.as_deref().unwrap_or("")).await {
+                    Ok(auth) => {
+                        println!("✓ Connection successful");
+                        if let Ok(subs) = client.subscriptions(&auth).await {
+                            println!("✓ {} subscriptions on server", subs.len());
+                        }
+                        if let Ok(unread) = client.unread_count(&auth).await {
+                            let total: i64 = unread.unreadcounts.iter().map(|u| u.count).sum();
+                            println!("✓ {} unread items", total);
+                        }
+                    }
+                    Err(e) => println!("✗ Connection failed: {e}"),
+                }
+            }
+        }
+        None => {
+            println!("(◕ᴥ◕) No sync configured\n");
+            println!("To configure sync, run:");
+            println!("  feedo sync login <server> <username> <password>");
+            println!("\nSupported services:");
+            println!("  • FreshRSS: https://your-server/api/greader.php");
+            println!("  • Miniflux: https://your-server/v1/");
+            println!("  • Inoreader: https://www.inoreader.com");
+            println!("  • The Old Reader: https://theoldreader.com");
+        }
+    }
+    
+    Ok(())
+}
+
+async fn sync_feeds() -> Result<()> {
+    let config = Config::load()?;
+    
+    let sync = config.sync.as_ref()
+        .ok_or_else(|| color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first."))?;
+    
+    let password = sync.password.as_deref()
+        .ok_or_else(|| color_eyre::eyre::eyre!("No password stored. Run 'feedo sync login' again."))?;
+    
+    println!("(◕ᴥ◕) Syncing with {}...\n", sync.server);
+    
+    let client = GReaderClient::new(&sync.server);
+    let auth = client.login(&sync.username, password).await?;
+    
+    // Fetch subscriptions
+    let subs = client.subscriptions(&auth).await?;
+    println!("✓ Fetched {} subscriptions", subs.len());
+    
+    // Fetch unread counts
+    let unread = client.unread_count(&auth).await?;
+    let total_unread: i64 = unread.unreadcounts.iter().map(|u| u.count).sum();
+    println!("✓ {} unread items total", total_unread);
+    
+    // For now, just print what we found
+    // TODO: Implement two-way sync with local config
+    println!("\nSubscriptions:");
+    for sub in &subs {
+        let count = unread.unreadcounts.iter()
+            .find(|u| u.id == sub.id)
+            .map(|u| u.count)
+            .unwrap_or(0);
+        let folder = sub.categories.first()
+            .map(|c| c.label.as_str())
+            .unwrap_or("(root)");
+        println!("  [{:>3}] {} ({})", count, sub.title, folder);
+    }
+    
+    println!("\n(◕ᴥ◕) Sync complete!");
     Ok(())
 }
