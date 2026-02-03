@@ -42,6 +42,7 @@ impl App {
     pub async fn new() -> Result<Self> {
         let config = Config::load()?;
         let theme = config.theme.clone();
+        let sync_enabled = config.sync.is_some();
         let mut feeds = FeedManager::new(&config)?;
 
         // Check if we have cached data (offline mode)
@@ -54,10 +55,13 @@ impl App {
         // Fetch feeds on startup (will use cache if offline)
         feeds.refresh_all().await;
 
+        let mut ui = UiState::default();
+        ui.sync_enabled = sync_enabled;
+
         let mut app = Self {
             config,
             feeds,
-            ui: UiState::default(),
+            ui,
             theme,
         };
 
@@ -164,5 +168,44 @@ impl App {
             .selected_feed
             .and_then(|idx| self.feeds.feeds.get(idx))
             .and_then(|f| f.items.get(self.ui.selected_item))
+    }
+
+    /// Run sync with configured server.
+    pub async fn run_sync(&mut self) -> Result<()> {
+        use crate::sync::SyncManager;
+
+        let sync = self.config.sync.clone()
+            .ok_or_else(|| color_eyre::eyre::eyre!("No sync configured"))?;
+
+        let password = sync.password.as_deref()
+            .ok_or_else(|| color_eyre::eyre::eyre!("No password stored"))?;
+
+        self.ui.syncing = true;
+        self.ui.sync_status = Some("Connecting...".to_string());
+
+        let manager = SyncManager::connect(&sync.server, &sync.username, password).await?;
+
+        self.ui.sync_status = Some("Syncing subscriptions...".to_string());
+        let result = manager.full_sync(&mut self.config, &mut self.feeds.cache).await?;
+
+        // Save changes
+        self.config.save()?;
+        self.feeds.save_cache();
+
+        // Reload feeds if new subscriptions were imported
+        if result.feeds_imported > 0 {
+            self.feeds = crate::feed::FeedManager::new(&self.config)?;
+            self.feeds.refresh_all().await;
+            self.rebuild_feed_list();
+        }
+
+        self.ui.syncing = false;
+        self.ui.sync_status = Some(format!(
+            "Synced: +{} feeds, {} read",
+            result.feeds_imported,
+            result.items_marked_read + result.items_synced_to_server
+        ));
+
+        Ok(())
     }
 }

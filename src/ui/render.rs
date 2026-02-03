@@ -334,15 +334,25 @@ impl App {
         let muted = self.theme.muted();
         let accent = self.theme.accent();
 
-        let status = self.ui.status.as_ref().map_or_else(
-            || {
-                Span::styled(
-                    " ↑↓ navigate │ ↵ select │ n add │ r refresh │ o open │ s share │ a mark all read │ / search │ t theme │ ? about │ q quit",
-                    Style::default().fg(muted),
-                )
-            },
-            |msg| Span::styled(format!(" {DOG_ICON} {msg}"), Style::default().fg(accent)),
-        );
+        // Build sync indicator
+        let sync_indicator = if self.ui.syncing {
+            " ⟳ syncing │"
+        } else if self.ui.sync_enabled {
+            " ☁ │"
+        } else {
+            ""
+        };
+
+        let status = if let Some(msg) = &self.ui.status {
+            Span::styled(format!(" {DOG_ICON} {msg}"), Style::default().fg(accent))
+        } else if let Some(msg) = &self.ui.sync_status {
+            Span::styled(format!(" ☁ {msg}"), Style::default().fg(accent))
+        } else {
+            Span::styled(
+                format!("{sync_indicator} ↑↓ navigate │ ↵ select │ n add │ r refresh │ S sync │ o open │ s share │ a mark all read │ / search │ t theme │ ? about │ q quit"),
+                Style::default().fg(muted),
+            )
+        };
 
         let bar = Paragraph::new(Line::from(status));
         frame.render_widget(bar, area);

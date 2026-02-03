@@ -40,6 +40,8 @@ pub enum Mode {
     AddFeedFolder,
     /// Share article mode.
     Share,
+    /// Syncing in progress.
+    Syncing,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -124,6 +126,14 @@ pub struct UiState {
     // --- Share state ---
     /// Selected share platform index.
     pub share_platform_index: usize,
+
+    // --- Sync state ---
+    /// Whether sync is configured.
+    pub sync_enabled: bool,
+    /// Last sync status message.
+    pub sync_status: Option<String>,
+    /// Whether sync is in progress.
+    pub syncing: bool,
 
     // --- Delete confirmation state ---
     /// Feed index pending deletion (for confirmation).
