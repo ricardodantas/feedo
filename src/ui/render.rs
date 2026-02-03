@@ -950,7 +950,6 @@ impl App {
         let accent = self.theme.accent();
         let muted = self.theme.muted();
         let fg = self.theme.fg();
-        let bg = self.theme.bg();
 
         // Larger, more prominent popup
         let popup_area = centered_rect(75, 85, area);
@@ -1005,9 +1004,10 @@ impl App {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(layout[1]);
 
-        // Key badge style - use black text for visibility on accent background
-        let key_style = Style::default().fg(Color::Black).bg(accent).bold();
-        let bar_style = Style::default().fg(muted);
+        // Key style - bright colored text in brackets for visibility
+        let key_style = Style::default().fg(accent).bold();
+        let bracket_style = Style::default().fg(muted);
+        let desc_style = Style::default().fg(fg);
 
         // ─── LEFT COLUMN ───
         let left_lines: Vec<Line> = vec![
@@ -1018,52 +1018,60 @@ impl App {
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled(" j / ↓ ", key_style),
-                Span::raw(" "),
-                Span::styled("Move down", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("j/↓", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("  "),
+                Span::styled("Move down", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled(" k / ↑ ", key_style),
-                Span::raw(" "),
-                Span::styled("Move up", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("k/↑", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("  "),
+                Span::styled("Move up", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("  Tab  ", key_style),
-                Span::raw(" "),
-                Span::styled("Next panel", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("Tab", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("  "),
+                Span::styled("Next panel", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   g   ", key_style),
-                Span::raw(" "),
-                Span::styled("Jump to top", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("g", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Jump to top", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   G   ", key_style),
-                Span::raw(" "),
-                Span::styled("Jump to bottom", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("G", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Jump to bottom", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled(" Enter ", key_style),
-                Span::raw(" "),
-                Span::styled("Select / Open", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("Enter", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw(""),
+                Span::styled("Select / Open", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled(" h / ← ", key_style),
-                Span::raw(" "),
-                Span::styled("Go back", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("h/←", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("  "),
+                Span::styled("Go back", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   v   ", key_style),
-                Span::raw(" "),
-                Span::styled("Toggle preview", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("v", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Toggle preview", desc_style),
             ]),
             Line::from(""),
             // Feeds section
@@ -1073,28 +1081,32 @@ impl App {
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   n   ", key_style),
-                Span::raw(" "),
-                Span::styled("Add new feed", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("n", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Add new feed", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   d   ", key_style),
-                Span::raw(" "),
-                Span::styled("Delete feed", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("d", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Delete feed", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   r   ", key_style),
-                Span::raw(" "),
-                Span::styled("Refresh current", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("r", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Refresh current", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   R   ", key_style),
-                Span::raw(" "),
-                Span::styled("Refresh all", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("R", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Refresh all", desc_style),
             ]),
         ];
 
@@ -1110,28 +1122,32 @@ impl App {
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled(" Space ", key_style),
-                Span::raw(" "),
-                Span::styled("Toggle read", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("Space", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw(""),
+                Span::styled("Toggle read", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   a   ", key_style),
-                Span::raw(" "),
-                Span::styled("Mark all read", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("a", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Mark all read", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   o   ", key_style),
-                Span::raw(" "),
-                Span::styled("Open in browser", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("o", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Open in browser", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   s   ", key_style),
-                Span::raw(" "),
-                Span::styled("Share article", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("s", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Share article", desc_style),
             ]),
             Line::from(""),
             // Search & Sync section
@@ -1141,16 +1157,18 @@ impl App {
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   /   ", key_style),
-                Span::raw(" "),
-                Span::styled("Search articles", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("/", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Search articles", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   S   ", key_style),
-                Span::raw(" "),
-                Span::styled("Cloud sync", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("S", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Cloud sync", desc_style),
             ]),
             Line::from(""),
             // App section
@@ -1160,28 +1178,32 @@ impl App {
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   t   ", key_style),
-                Span::raw(" "),
-                Span::styled("Change theme", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("t", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Change theme", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("  F1   ", key_style),
-                Span::raw(" "),
-                Span::styled("This help", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("F1", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("   "),
+                Span::styled("This help", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   ?   ", key_style),
-                Span::raw(" "),
-                Span::styled("About Feedo", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("?", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("About Feedo", desc_style),
             ]),
             Line::from(vec![
-                Span::styled(" ┃", bar_style),
-                Span::styled("   q   ", key_style),
-                Span::raw(" "),
-                Span::styled("Quit", Style::default().fg(fg)),
+                Span::styled("  [", bracket_style),
+                Span::styled("q", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("Quit", desc_style),
             ]),
         ];
 
@@ -1209,8 +1231,7 @@ impl App {
         let border = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Double)
-            .border_style(Style::default().fg(accent))
-            .style(Style::default().bg(bg));
+            .border_style(Style::default().fg(accent));
         frame.render_widget(border, popup_area);
     }
 
