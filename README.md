@@ -304,15 +304,38 @@ Feedo automatically caches all articles for offline reading:
 
 ### ☁️ Cloud Sync
 
-Feedo supports syncing with self-hosted RSS servers that implement the **Google Reader API**:
+Feedo supports syncing with RSS servers that implement the **Google Reader API**.
 
-| Service | Server URL Format |
-|---------|-------------------|
-| **FreshRSS** | `https://your-server/api/greader.php` |
-| **Miniflux** | `https://your-server/v1/` |
-| **Inoreader** | `https://www.inoreader.com` |
-| **The Old Reader** | `https://theoldreader.com` |
-| **BazQux** | `https://bazqux.com` |
+#### ✅ Tested & Working
+
+| Service | Server URL | Notes |
+|---------|------------|-------|
+| **FreshRSS** | `https://your-server/api/greader.php` | Self-hosted, recommended |
+| **Miniflux** | `https://your-server/v1/` | Self-hosted, lightweight |
+| **The Old Reader** | `https://theoldreader.com` | Hosted, free tier |
+| **BazQux** | `https://bazqux.com` | Hosted, free trial |
+
+#### ⚠️ Not Currently Supported
+
+| Service | Reason |
+|---------|--------|
+| **Inoreader** | Requires OAuth 2.0 / App registration (not plain password login) |
+| **Feedly** | Uses proprietary API, not Google Reader compatible |
+
+#### Quick Start with FreshRSS (Docker)
+
+```bash
+# Spin up FreshRSS locally
+podman run -d --name freshrss -p 8080:80 freshrss/freshrss
+# Or: docker run -d --name freshrss -p 8080:80 freshrss/freshrss
+
+# Visit http://localhost:8080, complete setup
+# Settings > Profile > set API password
+# Settings > Authentication > enable API access
+
+# Connect Feedo
+feedo sync login http://localhost:8080/api/greader.php your_user your_api_password
+```
 
 #### Setup
 
