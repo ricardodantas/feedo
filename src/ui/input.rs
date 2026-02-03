@@ -29,6 +29,7 @@ impl App {
             super::Mode::AddFeedName => self.handle_add_feed_name_key(key).await,
             super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key),
             super::Mode::ErrorDialog => self.handle_error_dialog_key(key),
+            super::Mode::About => self.handle_about_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -130,6 +131,11 @@ impl App {
 
             // Delete feed
             KeyCode::Char('d') | KeyCode::Delete => self.delete_selected_feed(),
+
+            // About dialog
+            KeyCode::Char('?') => {
+                self.ui.mode = super::Mode::About;
+            }
 
             _ => {}
         }
@@ -385,6 +391,21 @@ impl App {
             }
             KeyCode::Esc | KeyCode::Enter | KeyCode::Char('c' | 'C') => {
                 self.ui.close_error_dialog();
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Handle keys in about dialog mode.
+    fn handle_about_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') => {
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Char('g' | 'G') => {
+                // Open GitHub repo
+                let _ = open::that(crate::error_report::REPO_URL);
             }
             _ => {}
         }

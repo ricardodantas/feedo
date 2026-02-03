@@ -34,6 +34,8 @@ pub enum Mode {
     ConfirmDelete,
     /// Error dialog mode.
     ErrorDialog,
+    /// About dialog mode.
+    About,
 }
 
 /// Item in the feed list (can be folder or feed).

@@ -80,6 +80,10 @@ impl App {
             self.render_error_dialog(frame, area);
         }
 
+        if self.ui.mode == Mode::About {
+            self.render_about_dialog(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -725,6 +729,84 @@ impl App {
                     .border_style(Style::default().fg(error_color))
                     .title(" ❌ Error ")
                     .title_style(Style::default().fg(error_color).bold()),
+            );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    fn render_about_dialog(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let muted = self.theme.muted();
+        let fg = self.theme.fg();
+        let popup_area = centered_rect(60, 60, area);
+
+        frame.render_widget(Clear, popup_area);
+
+        let version = crate::error_report::VERSION;
+        let repo = crate::error_report::REPO_URL;
+
+        let logo = [
+            "    ██████╗██████╗██████╗██████╗  ██████╗",
+            "    ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗",
+            "    █████╗ █████╗ █████╗ ██║  ██║██║   ██║",
+            "    ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║",
+            "    ██║    ██████╗██████╗██████╔╝╚██████╔╝",
+            "    ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝",
+        ];
+
+        let mut lines: Vec<Line> = logo
+            .iter()
+            .map(|line| Line::from(Span::styled(*line, Style::default().fg(accent))))
+            .collect();
+
+        lines.extend([
+            Line::from(""),
+            Line::from(Span::styled(
+                "(◕ᴥ◕) Your terminal RSS companion",
+                Style::default().fg(fg).italic(),
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled("Version: ", Style::default().fg(muted)),
+                Span::styled(version, Style::default().fg(accent).bold()),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled("Author: ", Style::default().fg(muted)),
+                Span::styled("Ricardo Dantas", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled("License: ", Style::default().fg(muted)),
+                Span::styled("MIT", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled("Repo: ", Style::default().fg(muted)),
+                Span::styled(repo, Style::default().fg(accent)),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled(
+                "Built with Rust 🦀 + Ratatui",
+                Style::default().fg(muted).italic(),
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" [G] ", Style::default().fg(accent).bold()),
+                Span::raw("Open GitHub"),
+                Span::raw("    "),
+                Span::styled(" [Esc] ", Style::default().fg(muted)),
+                Span::raw("Close"),
+            ]),
+        ]);
+
+        let paragraph = Paragraph::new(lines)
+            .alignment(ratatui::layout::Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(accent))
+                    .title(" 🐕 About Feedo ")
+                    .title_style(Style::default().fg(accent).bold()),
             );
 
         frame.render_widget(paragraph, popup_area);
