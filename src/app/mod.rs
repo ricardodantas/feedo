@@ -55,8 +55,10 @@ impl App {
         // Fetch feeds on startup (will use cache if offline)
         feeds.refresh_all().await;
 
-        let mut ui = UiState::default();
-        ui.sync_enabled = sync_enabled;
+        let ui = UiState {
+            sync_enabled,
+            ..Default::default()
+        };
 
         let mut app = Self {
             config,
@@ -171,6 +173,10 @@ impl App {
     }
 
     /// Run sync with configured server.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if sync is not configured or the sync operation fails.
     pub async fn run_sync(&mut self) -> Result<()> {
         use crate::sync::SyncManager;
 

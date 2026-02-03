@@ -42,7 +42,7 @@
 //! - [`config`] — Configuration management and persistence
 //! - [`feed`] — Feed fetching, parsing, and state management
 //! - [`opml`] — OPML import/export for feed migration
-//! - [`sync`] — Sync with FreshRSS, Miniflux via Google Reader API
+//! - [`sync`] — Sync with `FreshRSS`, `Miniflux` via Google Reader API
 //! - [`theme`] — UI theming with 15 popular color schemes
 //! - [`ui`] — Terminal UI rendering and input handling
 //!

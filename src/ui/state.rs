@@ -55,6 +55,7 @@ pub enum FeedListItem {
 
 /// Complete UI state.
 #[derive(Debug, Default)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct UiState {
     /// Currently active panel.
     pub panel: Panel,
@@ -138,6 +139,8 @@ pub struct UiState {
     // --- Delete confirmation state ---
     /// Feed index pending deletion (for confirmation).
     pub pending_delete_feed: Option<usize>,
+    /// Folder index pending deletion (for confirmation).
+    pub pending_delete_folder: Option<usize>,
 
     // --- Error dialog state ---
     /// Error details for the error dialog (error message, context).
@@ -192,5 +195,6 @@ impl UiState {
     /// Reset delete confirmation state.
     pub const fn reset_delete(&mut self) {
         self.pending_delete_feed = None;
+        self.pending_delete_folder = None;
     }
 }

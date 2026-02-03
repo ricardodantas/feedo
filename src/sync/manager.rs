@@ -1,5 +1,9 @@
 //! Sync manager for bidirectional sync with Google Reader API servers.
 
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::redundant_closure_for_method_calls)]
+
 use std::collections::{HashMap, HashSet};
 
 use color_eyre::Result;
@@ -7,7 +11,7 @@ use tracing::{debug, info};
 
 use crate::config::{Config, FeedConfig, FolderConfig};
 use crate::feed::FeedCache;
-use crate::sync::{GReaderClient, AuthToken, StreamOptions, streams};
+use crate::sync::{AuthToken, GReaderClient, StreamOptions, streams};
 
 /// Result of a sync operation.
 #[derive(Debug, Default)]

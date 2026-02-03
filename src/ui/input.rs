@@ -450,13 +450,19 @@ impl App {
             return;
         }
 
-        // Add to feed manager
-        let feed_idx = self.feeds.feeds.len();
-        self.feeds
-            .feeds
-            .push(crate::feed::Feed::new(name.clone(), url));
+        // Reload feed manager from config to sync folder structure
+        match crate::feed::FeedManager::new(&self.config) {
+            Ok(new_feeds) => {
+                self.feeds = new_feeds;
+            }
+            Err(e) => {
+                self.ui.set_error(format!("Failed to reload feeds: {e}"));
+                return;
+            }
+        }
 
-        // Refresh the new feed
+        // Refresh the newly added feed
+        let feed_idx = self.feeds.feeds.len().saturating_sub(1);
         self.feeds.refresh_feed(feed_idx).await;
 
         // Update UI
@@ -468,20 +474,24 @@ impl App {
 
     /// Prompt for delete confirmation.
     fn delete_selected_feed(&mut self) {
-        // Only delete if we're in the Feeds panel and have a feed selected
+        // Only delete if we're in the Feeds panel
         if !matches!(self.ui.panel, super::Panel::Feeds) {
             return;
         }
 
-        let Some(super::state::FeedListItem::Feed(feed_idx)) =
-            self.ui.feed_list.get(self.ui.feed_list_index).copied()
-        else {
-            return;
-        };
-
-        // Store the feed index and switch to confirmation mode
-        self.ui.pending_delete_feed = Some(feed_idx);
-        self.ui.mode = super::Mode::ConfirmDelete;
+        match self.ui.feed_list.get(self.ui.feed_list_index).copied() {
+            Some(super::state::FeedListItem::Feed(feed_idx)) => {
+                // Store the feed index and switch to confirmation mode
+                self.ui.pending_delete_feed = Some(feed_idx);
+                self.ui.mode = super::Mode::ConfirmDelete;
+            }
+            Some(super::state::FeedListItem::Folder(folder_idx)) => {
+                // Store the folder index and switch to confirmation mode
+                self.ui.pending_delete_folder = Some(folder_idx);
+                self.ui.mode = super::Mode::ConfirmDelete;
+            }
+            None => {}
+        }
     }
 
     /// Handle keys in delete confirmation mode.
@@ -532,8 +542,14 @@ impl App {
         KeyResult::Continue
     }
 
-    /// Actually delete the feed after confirmation.
+    /// Actually delete the feed or folder after confirmation.
     fn perform_delete(&mut self) {
+        // Check if we're deleting a folder
+        if let Some(folder_idx) = self.ui.pending_delete_folder {
+            self.perform_delete_folder(folder_idx);
+            return;
+        }
+
         let Some(feed_idx) = self.ui.pending_delete_feed else {
             self.ui.mode = super::Mode::Normal;
             return;
@@ -589,6 +605,49 @@ impl App {
         self.rebuild_feed_list();
         self.select_first_feed();
         self.ui.set_status(format!("Deleted: {feed_name}"));
+        self.ui.reset_delete();
+        self.ui.mode = super::Mode::Normal;
+    }
+
+    /// Delete a folder and all its feeds.
+    #[allow(clippy::map_unwrap_or)]
+    fn perform_delete_folder(&mut self, folder_idx: usize) {
+        // Get the folder name for status message
+        let folder_name = self
+            .config
+            .folders
+            .get(folder_idx)
+            .map(|f| f.name.clone())
+            .unwrap_or_default();
+
+        let feed_count = self
+            .config
+            .folders
+            .get(folder_idx)
+            .map(|f| f.feeds.len())
+            .unwrap_or(0);
+
+        // Remove the folder from config
+        if folder_idx < self.config.folders.len() {
+            self.config.folders.remove(folder_idx);
+        }
+
+        // Save config
+        if let Err(e) = self.config.save() {
+            self.ui.set_error(format!("Failed to save: {e}"));
+            self.ui.reset_delete();
+            self.ui.mode = super::Mode::Normal;
+            return;
+        }
+
+        // Reload feed manager from config
+        if let Ok(new_feeds) = crate::feed::FeedManager::new(&self.config) {
+            self.feeds = new_feeds;
+        }
+
+        self.rebuild_feed_list();
+        self.select_first_feed();
+        self.ui.set_status(format!("Deleted folder: {folder_name} ({feed_count} feeds)"));
         self.ui.reset_delete();
         self.ui.mode = super::Mode::Normal;
     }
@@ -725,7 +784,10 @@ impl App {
 
                 let browser_opened = can_open_browser && open::that(link).is_ok();
 
-                if !browser_opened {
+                if browser_opened {
+                    // Mark as read when opening in browser
+                    self.mark_current_read();
+                } else {
                     // Try to copy to clipboard instead
                     match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(link)) {
                         Ok(()) => {
@@ -743,18 +805,14 @@ impl App {
                             );
                         }
                     }
-                    return;
                 }
             } else {
                 self.ui.show_error_dialog(
                     "No link available",
                     Some("This article doesn't have a URL to open.".to_string()),
                 );
-                return;
             }
         }
-        // Mark as read when opening in browser
-        self.mark_current_read();
     }
 
     fn toggle_read(&mut self) {
@@ -869,23 +927,32 @@ impl App {
             }
             KeyCode::Enter => {
                 self.share_to_platform();
-                self.ui.mode = super::Mode::Normal;
+                // Only reset to Normal if we're not showing an error dialog
+                if self.ui.mode != super::Mode::ErrorDialog {
+                    self.ui.mode = super::Mode::Normal;
+                }
             }
             // Quick keys for direct sharing
             KeyCode::Char('x' | 'X') => {
                 self.ui.share_platform_index = 0;
                 self.share_to_platform();
-                self.ui.mode = super::Mode::Normal;
+                if self.ui.mode != super::Mode::ErrorDialog {
+                    self.ui.mode = super::Mode::Normal;
+                }
             }
             KeyCode::Char('m' | 'M') => {
                 self.ui.share_platform_index = 1;
                 self.share_to_platform();
-                self.ui.mode = super::Mode::Normal;
+                if self.ui.mode != super::Mode::ErrorDialog {
+                    self.ui.mode = super::Mode::Normal;
+                }
             }
             KeyCode::Char('b' | 'B') => {
                 self.ui.share_platform_index = 2;
                 self.share_to_platform();
-                self.ui.mode = super::Mode::Normal;
+                if self.ui.mode != super::Mode::ErrorDialog {
+                    self.ui.mode = super::Mode::Normal;
+                }
             }
             _ => {}
         }
@@ -940,7 +1007,9 @@ impl App {
 
         let browser_opened = can_open_browser && open::that(&share_url).is_ok();
 
-        if !browser_opened {
+        if browser_opened {
+            self.ui.set_status(format!("Sharing to {platform}..."));
+        } else {
             // Browser failed or not available - copy to clipboard instead
             match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(&share_url)) {
                 Ok(()) => {
@@ -958,8 +1027,6 @@ impl App {
                     );
                 }
             }
-        } else {
-            self.ui.set_status(format!("Sharing to {platform}..."));
         }
     }
 }

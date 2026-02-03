@@ -1,10 +1,20 @@
 //! Google Reader API client implementation.
 
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::format_push_string)]
+#![allow(clippy::uninlined_format_args)]
+#![allow(clippy::must_use_candidate)]
+
 use color_eyre::{Result, eyre::eyre};
 use reqwest::{Client, header};
 use tracing::debug;
 
-use super::types::*;
+use super::types::{
+    AuthToken, StreamContents, StreamItemIds, Subscription, SubscriptionList, Tag, TagList,
+    UnreadCount, UserInfo, streams,
+};
 
 /// Google Reader API client.
 #[derive(Debug, Clone)]

@@ -216,7 +216,7 @@ fn export_opml(path: &Path) -> Result<()> {
 }
 
 async fn sync_login(server: &str, username: &str, password: &str, provider: SyncProvider) -> Result<()> {
-    println!("(◕ᴥ◕) Connecting to {}...", server);
+    println!("(◕ᴥ◕) Connecting to {server}...");
     
     // Test the connection
     let client = GReaderClient::new(server);
@@ -247,43 +247,40 @@ async fn sync_login(server: &str, username: &str, password: &str, provider: Sync
 async fn sync_status() -> Result<()> {
     let config = Config::load()?;
     
-    match &config.sync {
-        Some(sync) => {
-            println!("(◕ᴥ◕) Sync Configuration\n");
-            println!("  Provider: {:?}", sync.provider);
-            println!("  Server:   {}", sync.server);
-            println!("  Username: {}", sync.username);
-            println!("  Password: {}", if sync.password.is_some() { "****" } else { "(not set)" });
-            
-            // Try to connect and show stats
-            if sync.password.is_some() {
-                println!("\nTesting connection...");
-                let client = GReaderClient::new(&sync.server);
-                match client.login(&sync.username, sync.password.as_deref().unwrap_or("")).await {
-                    Ok(auth) => {
-                        println!("✓ Connection successful");
-                        if let Ok(subs) = client.subscriptions(&auth).await {
-                            println!("✓ {} subscriptions on server", subs.len());
-                        }
-                        if let Ok(unread) = client.unread_count(&auth).await {
-                            let total: i64 = unread.unreadcounts.iter().map(|u| u.count).sum();
-                            println!("✓ {} unread items", total);
-                        }
+    if let Some(sync) = &config.sync {
+        println!("(◕ᴥ◕) Sync Configuration\n");
+        println!("  Provider: {:?}", sync.provider);
+        println!("  Server:   {}", sync.server);
+        println!("  Username: {}", sync.username);
+        println!("  Password: {}", if sync.password.is_some() { "****" } else { "(not set)" });
+        
+        // Try to connect and show stats
+        if sync.password.is_some() {
+            println!("\nTesting connection...");
+            let client = GReaderClient::new(&sync.server);
+            match client.login(&sync.username, sync.password.as_deref().unwrap_or("")).await {
+                Ok(auth) => {
+                    println!("✓ Connection successful");
+                    if let Ok(subs) = client.subscriptions(&auth).await {
+                        println!("✓ {} subscriptions on server", subs.len());
                     }
-                    Err(e) => println!("✗ Connection failed: {e}"),
+                    if let Ok(unread) = client.unread_count(&auth).await {
+                        let total: i64 = unread.unreadcounts.iter().map(|u| u.count).sum();
+                        println!("✓ {total} unread items");
+                    }
                 }
+                Err(e) => println!("✗ Connection failed: {e}"),
             }
         }
-        None => {
-            println!("(◕ᴥ◕) No sync configured\n");
-            println!("To configure sync, run:");
-            println!("  feedo sync login <server> <username> <password>");
-            println!("\nSupported services:");
-            println!("  • FreshRSS: https://your-server/api/greader.php");
-            println!("  • Miniflux: https://your-server/v1/");
-            println!("  • Inoreader: https://www.inoreader.com");
-            println!("  • The Old Reader: https://theoldreader.com");
-        }
+    } else {
+        println!("(◕ᴥ◕) No sync configured\n");
+        println!("To configure sync, run:");
+        println!("  feedo sync login <server> <username> <password>");
+        println!("\nSupported services:");
+        println!("  • FreshRSS: https://your-server/api/greader.php");
+        println!("  • Miniflux: https://your-server/v1/");
+        println!("  • Inoreader: https://www.inoreader.com");
+        println!("  • The Old Reader: https://theoldreader.com");
     }
     
     Ok(())
@@ -319,7 +316,7 @@ async fn sync_feeds() -> Result<()> {
     if !result.errors.is_empty() {
         println!("\n⚠ {} warnings:", result.errors.len());
         for err in &result.errors[..result.errors.len().min(5)] {
-            println!("  • {}", err);
+            println!("  • {err}");
         }
         if result.errors.len() > 5 {
             println!("  ... and {} more", result.errors.len() - 5);

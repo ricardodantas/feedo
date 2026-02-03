@@ -330,6 +330,7 @@ impl App {
         frame.render_widget(paragraph, area);
     }
 
+    #[allow(clippy::option_if_let_else)]
     fn render_status_bar(&self, frame: &mut Frame, area: Rect) {
         let muted = self.theme.muted();
         let accent = self.theme.accent();
@@ -724,6 +725,8 @@ impl App {
         }
     }
 
+    #[allow(clippy::option_if_let_else)]
+    #[allow(clippy::or_fun_call)]
     fn render_delete_confirmation(&self, frame: &mut Frame, area: Rect) {
         let accent = self.theme.accent();
         let muted = self.theme.muted();
@@ -731,21 +734,38 @@ impl App {
 
         frame.render_widget(Clear, popup_area);
 
-        let feed_name = self
-            .ui
-            .pending_delete_feed
-            .and_then(|idx| self.feeds.feeds.get(idx))
-            .map_or("this feed", |f| f.name.as_str());
+        // Determine what we're deleting (folder or feed)
+        let (item_name, item_type, extra_info) = if let Some(folder_idx) = self.ui.pending_delete_folder {
+            let folder = self.config.folders.get(folder_idx);
+            let name = folder.map_or("this folder", |f| f.name.as_str());
+            let feed_count = folder.map_or(0, |f| f.feeds.len());
+            (
+                name.to_string(),
+                "folder",
+                format!("This will remove the folder and all {feed_count} feeds inside."),
+            )
+        } else {
+            let feed_name = self
+                .ui
+                .pending_delete_feed
+                .and_then(|idx| self.feeds.feeds.get(idx))
+                .map_or("this feed".to_string(), |f| f.name.clone());
+            (
+                feed_name,
+                "feed",
+                "This will remove the feed from your subscriptions.".to_string(),
+            )
+        };
 
         let text = vec![
             Line::from(""),
             Line::from(Span::styled(
-                format!("Delete \"{feed_name}\"?"),
+                format!("Delete {item_type} \"{item_name}\"?"),
                 Style::default().fg(accent).bold(),
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "This will remove the feed from your subscriptions.",
+                extra_info,
                 Style::default().fg(muted),
             )),
             Line::from(""),
