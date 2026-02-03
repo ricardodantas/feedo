@@ -12,23 +12,22 @@
 //! # Example
 //!
 //! ```ignore
-//! use feedo::sync::GReaderClient;
+//! use feedo::sync::{GReaderClient, SyncManager};
 //!
+//! // Low-level client
 //! let client = GReaderClient::new("https://freshrss.example.com/api/greader.php");
 //! let auth = client.login("username", "api_password").await?;
-//!
-//! // Fetch subscriptions
 //! let subs = client.subscriptions(&auth).await?;
 //!
-//! // Fetch unread items
-//! let items = client.stream_contents(&auth, "user/-/state/com.google/reading-list", None).await?;
-//!
-//! // Mark item as read
-//! client.edit_tag(&auth, &item_id, Some("user/-/state/com.google/read"), None).await?;
+//! // High-level sync manager
+//! let manager = SyncManager::connect(server, user, pass).await?;
+//! let result = manager.full_sync(&mut config, &mut cache).await?;
 //! ```
 
 mod client;
+mod manager;
 mod types;
 
-pub use client::GReaderClient;
+pub use client::{GReaderClient, StreamOptions};
+pub use manager::{SyncManager, SyncResult};
 pub use types::*;

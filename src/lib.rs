@@ -90,5 +90,5 @@ pub use feed::{
     CacheStats, CachedFeed, CachedItem, DiscoveredFeed, Feed, FeedCache, FeedDiscovery, FeedItem,
     FeedManager, FeedType,
 };
-pub use sync::{GReaderClient, SyncConfig, SyncProvider};
+pub use sync::{GReaderClient, SyncConfig, SyncManager, SyncProvider, SyncResult};
 pub use theme::{Theme, ThemeName, ThemePalette};

@@ -290,9 +290,9 @@ async fn sync_status() -> Result<()> {
 }
 
 async fn sync_feeds() -> Result<()> {
-    let config = Config::load()?;
+    let mut config = Config::load()?;
     
-    let sync = config.sync.as_ref()
+    let sync = config.sync.clone()
         .ok_or_else(|| color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first."))?;
     
     let password = sync.password.as_deref()
@@ -300,30 +300,30 @@ async fn sync_feeds() -> Result<()> {
     
     println!("(◕ᴥ◕) Syncing with {}...\n", sync.server);
     
-    let client = GReaderClient::new(&sync.server);
-    let auth = client.login(&sync.username, password).await?;
+    // Load cache
+    let mut cache = feedo::FeedCache::load()?;
     
-    // Fetch subscriptions
-    let subs = client.subscriptions(&auth).await?;
-    println!("✓ Fetched {} subscriptions", subs.len());
+    // Connect and run full sync
+    let manager = feedo::SyncManager::connect(&sync.server, &sync.username, password).await?;
+    let result = manager.full_sync(&mut config, &mut cache).await?;
     
-    // Fetch unread counts
-    let unread = client.unread_count(&auth).await?;
-    let total_unread: i64 = unread.unreadcounts.iter().map(|u| u.count).sum();
-    println!("✓ {} unread items total", total_unread);
+    // Save changes
+    config.save()?;
+    cache.save()?;
     
-    // For now, just print what we found
-    // TODO: Implement two-way sync with local config
-    println!("\nSubscriptions:");
-    for sub in &subs {
-        let count = unread.unreadcounts.iter()
-            .find(|u| u.id == sub.id)
-            .map(|u| u.count)
-            .unwrap_or(0);
-        let folder = sub.categories.first()
-            .map(|c| c.label.as_str())
-            .unwrap_or("(root)");
-        println!("  [{:>3}] {} ({})", count, sub.title, folder);
+    // Print results
+    println!("✓ Imported {} new feeds ({} already existed)", result.feeds_imported, result.feeds_existing);
+    println!("✓ Marked {} items as read (from server)", result.items_marked_read);
+    println!("✓ Synced {} items to server (from local)", result.items_synced_to_server);
+    
+    if !result.errors.is_empty() {
+        println!("\n⚠ {} warnings:", result.errors.len());
+        for err in &result.errors[..result.errors.len().min(5)] {
+            println!("  • {}", err);
+        }
+        if result.errors.len() > 5 {
+            println!("  ... and {} more", result.errors.len() - 5);
+        }
     }
     
     println!("\n(◕ᴥ◕) Sync complete!");
