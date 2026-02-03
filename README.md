@@ -31,7 +31,7 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 | 🎨 **Beautiful TUI** | Clean three-panel interface with rounded borders and smooth navigation |
 | 📁 **Smart Folders** | Organize feeds into collapsible folders with custom emoji icons |
 | 🔍 **Instant Search** | Find articles across all feeds with real-time filtering |
-| 🎭 **Themeable** | 8 accent colors to match your terminal aesthetic |
+| 🎭 **15 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
 | 📥 **OPML Support** | Import/export subscriptions for easy migration |
 | ⚡ **Blazingly Fast** | Async feed fetching with Tokio — no UI blocking |
 | 🦀 **Memory Safe** | Written in 100% safe Rust with zero unsafe code |
@@ -202,7 +202,7 @@ Feedo uses `~/.config/feedo/` on **all platforms** for consistency:
     }
   ],
   "theme": {
-    "accent": "cyan"
+    "name": "dracula"
   },
   "refresh_interval": 30
 }
@@ -210,14 +210,34 @@ Feedo uses `~/.config/feedo/` on **all platforms** for consistency:
 
 ### Theme Colors
 
-| Color | Preview |
-|-------|---------|
-| `cyan` | 🔵 Default — clean and modern |
-| `blue` | 🔷 Classic blue |
-| `green` | 🟢 Nature vibes |
-| `yellow` | 🟡 Warm and sunny |
-| `magenta` | 🟣 Purple dreams |
-| `red` | 🔴 Bold and bright |
+Feedo comes with **15 popular themes** from the terminal/editor world:
+
+| Theme | Description |
+|-------|-------------|
+| `dracula` | 🦇 Dark purple aesthetic (default) |
+| `one-dark-pro` | ⚛️ Atom's iconic dark theme |
+| `nord` | ❄️ Arctic, bluish color palette |
+| `catppuccin-mocha` | 🐱 Warm pastel dark theme |
+| `catppuccin-latte` | ☕ Warm pastel light theme |
+| `gruvbox-dark` | 🎸 Retro groove colors |
+| `gruvbox-light` | 🌻 Retro groove, light variant |
+| `tokyo-night` | 🌃 Futuristic dark blue |
+| `solarized-dark` | ☀️ Precision colors, dark |
+| `solarized-light` | 🌞 Precision colors, light |
+| `monokai-pro` | 🎨 Classic syntax highlighting |
+| `rose-pine` | 🌹 Soho vibes with natural pine |
+| `kanagawa` | 🌊 Inspired by Hokusai's art |
+| `everforest` | 🌲 Comfortable green forest |
+| `cyberpunk` | 💜 Neon-soaked futuristic |
+
+**Example config:**
+```json
+{
+  "theme": {
+    "name": "catppuccin-mocha"
+  }
+}
+```
 | `orange` | 🟠 Energetic |
 | `pink` | 🩷 Soft and playful |
 

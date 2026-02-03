@@ -42,7 +42,7 @@
 //! - [`config`] — Configuration management and persistence
 //! - [`feed`] — Feed fetching, parsing, and state management
 //! - [`opml`] — OPML import/export for feed migration
-//! - [`theme`] — UI theming and color configuration
+//! - [`theme`] — UI theming with 15 popular color schemes
 //! - [`ui`] — Terminal UI rendering and input handling
 //!
 //! ## Example
@@ -62,7 +62,7 @@
 //! - **Beautiful TUI** — Clean three-panel interface with ratatui
 //! - **Folder Organization** — Group feeds with custom emoji icons
 //! - **Instant Search** — Find articles across all feeds
-//! - **Themeable** — 8 accent colors to choose from
+//! - **15 Themes** — Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, and more
 //! - **OPML Support** — Import/export for easy migration
 //! - **Async** — Non-blocking feed fetching with Tokio
 //! - **Cross-Platform** — Works on Linux, macOS, and Windows
@@ -82,4 +82,4 @@ pub mod ui;
 pub use app::App;
 pub use config::Config;
 pub use feed::{Feed, FeedItem, FeedManager};
-pub use theme::Theme;
+pub use theme::{Theme, ThemeName, ThemePalette};
