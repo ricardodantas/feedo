@@ -26,7 +26,17 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 
 ## 📸 Screenshots
 
-> *Screenshots coming soon*
+### Main View
+![Feedo Main View](assets/screenshots/feedo-main.png)
+*Three-panel layout: feeds, articles, and content preview with Dracula theme*
+
+### Search
+![Feedo Search](assets/screenshots/feedo-search.png)
+*Real-time search across all your feeds*
+
+### Add Feed
+![Feedo Add Feed](assets/screenshots/feedo-add-feed.png)
+*Auto-discover RSS/Atom feeds from any URL*
 
 <br>
 
