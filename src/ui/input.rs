@@ -31,6 +31,7 @@ impl App {
             super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key),
             super::Mode::ErrorDialog => self.handle_error_dialog_key(key),
             super::Mode::About => self.handle_about_key(key),
+            super::Mode::Share => self.handle_share_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -127,6 +128,7 @@ impl App {
                 self.ui.set_status("Feeds refreshed!");
             }
             KeyCode::Char('o') => self.open_link(),
+            KeyCode::Char('s') => self.open_share_dialog(),
             KeyCode::Char(' ') => self.toggle_read(),
             KeyCode::Char('a') => self.mark_all_read(),
 
@@ -774,5 +776,104 @@ impl App {
         }
 
         self.ui.search_selected = 0;
+    }
+
+    /// Open the share dialog for the current item.
+    fn open_share_dialog(&mut self) {
+        // Only allow sharing when an item is selected
+        if matches!(self.ui.panel, super::Panel::Items | super::Panel::Content)
+            && self.selected_item().is_some()
+        {
+            self.ui.share_platform_index = 0;
+            self.ui.mode = super::Mode::Share;
+        }
+    }
+
+    /// Handle keys in share mode.
+    fn handle_share_key(&mut self, key: KeyCode) -> KeyResult {
+        const PLATFORM_COUNT: usize = 3;
+
+        match key {
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Char('j') | KeyCode::Down => {
+                self.ui.share_platform_index =
+                    (self.ui.share_platform_index + 1) % PLATFORM_COUNT;
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                self.ui.share_platform_index = self
+                    .ui
+                    .share_platform_index
+                    .checked_sub(1)
+                    .unwrap_or(PLATFORM_COUNT - 1);
+            }
+            KeyCode::Enter => {
+                self.share_to_platform();
+                self.ui.mode = super::Mode::Normal;
+            }
+            // Quick keys for direct sharing
+            KeyCode::Char('x' | 'X') => {
+                self.ui.share_platform_index = 0;
+                self.share_to_platform();
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Char('m' | 'M') => {
+                self.ui.share_platform_index = 1;
+                self.share_to_platform();
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Char('b' | 'B') => {
+                self.ui.share_platform_index = 2;
+                self.share_to_platform();
+                self.ui.mode = super::Mode::Normal;
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Share the current item to the selected platform.
+    fn share_to_platform(&mut self) {
+        let Some(item) = self.selected_item() else {
+            return;
+        };
+
+        let Some(link) = item.link.clone() else {
+            self.ui.set_error("No link available to share");
+            return;
+        };
+
+        let title = item.title.clone();
+        let text = format!("{title} {link}");
+        let encoded_text = urlencoding::encode(&text);
+
+        let share_url = match self.ui.share_platform_index {
+            0 => {
+                // X (Twitter)
+                format!("https://twitter.com/intent/tweet?text={encoded_text}")
+            }
+            1 => {
+                // Mastodon (uses share page that works with any instance)
+                format!("https://mastodonshare.com/?text={encoded_text}")
+            }
+            2 => {
+                // Bluesky
+                format!("https://bsky.app/intent/compose?text={encoded_text}")
+            }
+            _ => return,
+        };
+
+        if let Err(e) = open::that(&share_url) {
+            self.ui.set_error(format!("Failed to open browser: {e}"));
+        } else {
+            let platform = match self.ui.share_platform_index {
+                0 => "X",
+                1 => "Mastodon",
+                2 => "Bluesky",
+                _ => "Unknown",
+            };
+            self.ui.set_status(format!("Sharing to {platform}..."));
+        }
     }
 }

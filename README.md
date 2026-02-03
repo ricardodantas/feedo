@@ -51,6 +51,7 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 | 🔎 **Instant Search** | Find articles across all feeds with real-time filtering |
 | 🎭 **15 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
 | 📥 **OPML Support** | Import/export subscriptions for easy migration |
+| 📤 **Social Sharing** | Share articles to X, Mastodon, and Bluesky with one keypress |
 | ⚡ **Blazingly Fast** | Async feed fetching with Tokio — no UI blocking |
 | 🦀 **Memory Safe** | Written in 100% safe Rust with zero unsafe code |
 | 🌍 **Cross-Platform** | Linux, macOS, Windows — same config path everywhere |
@@ -159,11 +160,24 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `d` / `Delete` | Delete selected feed |
 | `r` | Refresh all feeds |
 | `o` | Open article in browser |
+| `s` | Share article |
 | `Space` | Toggle read/unread |
-| `a` | Mark all as read |
+| `a` | Mark all as read (selected feed) |
 | `/` | Open search |
 | `t` | Open theme picker |
+| `?` | About |
 | `q` / `Esc` | Quit |
+
+### Share Mode
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Navigate platforms |
+| `Enter` | Share to selected platform |
+| `x` | Quick share to X (Twitter) |
+| `m` | Quick share to Mastodon |
+| `b` | Quick share to Bluesky |
+| `Esc` | Cancel |
 
 ### Add Feed Mode
 

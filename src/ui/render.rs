@@ -84,6 +84,10 @@ impl App {
             self.render_about_dialog(frame, area);
         }
 
+        if self.ui.mode == Mode::Share {
+            self.render_share_dialog(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -900,6 +904,63 @@ impl App {
                     .border_type(BorderType::Rounded)
                     .border_style(Style::default().fg(accent))
                     .title(" 🐕 About Feedo ")
+                    .title_style(Style::default().fg(accent).bold()),
+            );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    /// Render share dialog overlay.
+    fn render_share_dialog(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let popup_area = centered_rect(40, 35, area);
+
+        // Clear background
+        frame.render_widget(Clear, popup_area);
+
+        let platforms = ["  X (Twitter)", "  Mastodon", "  Bluesky"];
+        let selected = self.ui.share_platform_index;
+
+        let items: Vec<Line> = platforms
+            .iter()
+            .enumerate()
+            .map(|(i, name)| {
+                let style = if i == selected {
+                    Style::default().fg(accent).bold()
+                } else {
+                    Style::default().fg(self.theme.fg())
+                };
+                let prefix = if i == selected { "▸ " } else { "  " };
+                Line::from(format!("{prefix}{name}")).style(style)
+            })
+            .collect();
+
+        let help = Line::from(vec![
+            Span::styled("↑↓", Style::default().fg(accent)),
+            Span::raw(" nav  "),
+            Span::styled("Enter", Style::default().fg(accent)),
+            Span::raw(" share  "),
+            Span::styled("x/m/b", Style::default().fg(accent)),
+            Span::raw(" quick  "),
+            Span::styled("Esc", Style::default().fg(accent)),
+            Span::raw(" cancel"),
+        ])
+        .style(Style::default().fg(self.theme.muted()));
+
+        let mut lines = vec![Line::from(""), Line::from("Select platform to share:")];
+        lines.push(Line::from(""));
+        lines.extend(items);
+        lines.push(Line::from(""));
+        lines.push(help);
+
+        let paragraph = Paragraph::new(lines)
+            .alignment(ratatui::layout::Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(accent))
+                    .title(" 📤 Share Article ")
                     .title_style(Style::default().fg(accent).bold()),
             );
 

@@ -38,6 +38,8 @@ pub enum Mode {
     About,
     /// Add feed mode - selecting folder.
     AddFeedFolder,
+    /// Share article mode.
+    Share,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -118,6 +120,10 @@ pub struct UiState {
 
     /// Whether creating a new folder.
     pub creating_new_folder: bool,
+
+    // --- Share state ---
+    /// Selected share platform index.
+    pub share_platform_index: usize,
 
     // --- Delete confirmation state ---
     /// Feed index pending deletion (for confirmation).
