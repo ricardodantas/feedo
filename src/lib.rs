@@ -81,5 +81,5 @@ pub mod ui;
 // Re-export main types for convenience
 pub use app::App;
 pub use config::Config;
-pub use feed::{DiscoveredFeed, Feed, FeedDiscovery, FeedItem, FeedManager, FeedType};
+pub use feed::{CachedFeed, CachedItem, CacheStats, DiscoveredFeed, Feed, FeedCache, FeedDiscovery, FeedItem, FeedManager, FeedType};
 pub use theme::{Theme, ThemeName, ThemePalette};

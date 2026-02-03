@@ -36,6 +36,7 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 |---------|-------------|
 | 🎨 **Beautiful TUI** | Clean three-panel interface with rounded borders and smooth navigation |
 | 🔍 **Feed Discovery** | Auto-detect RSS/Atom feeds from any URL — just paste a website |
+| 📴 **Offline Mode** | Articles cached locally — read without internet, read states persist |
 | 📁 **Smart Folders** | Organize feeds into collapsible folders with custom emoji icons |
 | 🔎 **Instant Search** | Find articles across all feeds with real-time filtering |
 | 🎭 **15 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
@@ -241,6 +242,22 @@ Feedo uses `~/.config/feedo/` on **all platforms** for consistency:
 }
 ```
 
+### Offline Mode & Cache
+
+Feedo automatically caches all articles for offline reading:
+
+| File | Purpose |
+|------|---------|
+| `~/.config/feedo/data/cache.json` | Cached articles and read states |
+
+**How it works:**
+- Articles are cached after each successful fetch
+- Read/unread states persist between sessions
+- When offline, you can still browse all previously fetched articles
+- Cache is updated on every refresh and saved on exit
+
+**No configuration needed** — offline mode works automatically!
+
 ### Theme Colors
 
 Feedo comes with **15 popular themes** from the terminal/editor world:
@@ -323,7 +340,7 @@ src/
 ## 🗺️ Roadmap
 
 - [x] **Feed Discovery** — Auto-detect RSS from any URL ✅
-- [ ] **Offline Mode** — Cache articles for reading without internet
+- [x] **Offline Mode** — Cache articles for reading without internet ✅
 - [ ] **Custom Keybindings** — Vim/Emacs presets, full remapping
 - [ ] **Notifications** — Desktop alerts for new articles
 - [ ] **Vim Mode** — `:` command mode for power users

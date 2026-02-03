@@ -11,6 +11,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::prelude::*;
+use tracing::info;
 
 use crate::config::Config;
 use crate::feed::{FeedItem, FeedManager};
@@ -43,7 +44,14 @@ impl App {
         let theme = config.theme.clone();
         let mut feeds = FeedManager::new(&config)?;
 
-        // Fetch feeds on startup
+        // Check if we have cached data (offline mode)
+        let has_cached = feeds.feeds.iter().any(|f| !f.items.is_empty());
+        
+        if has_cached {
+            info!("Loaded cached articles for offline reading");
+        }
+
+        // Fetch feeds on startup (will use cache if offline)
         feeds.refresh_all().await;
 
         let mut app = Self {
@@ -75,6 +83,9 @@ impl App {
 
         // Main loop
         let result = self.main_loop(&mut terminal).await;
+
+        // Save cache before exit
+        self.feeds.save_cache();
 
         // Restore terminal
         disable_raw_mode()?;

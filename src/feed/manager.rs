@@ -1,10 +1,12 @@
 //! Feed manager - handles feed state and fetching.
 
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
 use color_eyre::Result;
-use tracing::{debug, warn};
+use tracing::{debug, info, warn};
 
-use super::{parser, FeedItem};
+use super::{cache::{CachedItem, FeedCache}, parser, FeedItem};
 use crate::config::Config;
 
 /// A single feed with its items.
@@ -92,6 +94,9 @@ pub struct FeedManager {
 
     /// HTTP client for fetching.
     client: reqwest::Client,
+
+    /// Offline cache.
+    pub cache: FeedCache,
 }
 
 impl FeedManager {
@@ -106,6 +111,9 @@ impl FeedManager {
             .timeout(std::time::Duration::from_secs(30))
             .build()?;
 
+        // Load cache
+        let cache = FeedCache::load().unwrap_or_default();
+
         let mut feeds: Vec<Feed> = Vec::new();
         let mut folders: Vec<Folder> = Vec::new();
 
@@ -119,7 +127,16 @@ impl FeedManager {
 
             for feed_config in &folder_config.feeds {
                 let feed_idx = feeds.len();
-                feeds.push(Feed::new(feed_config.name.clone(), feed_config.url.clone()));
+                let mut feed = Feed::new(feed_config.name.clone(), feed_config.url.clone());
+                
+                // Load cached data if available
+                if let Some(cached) = cache.get(&feed_config.url) {
+                    feed.items = cached_to_items(&cached.items);
+                    feed.last_updated = cached.last_fetched;
+                    info!("Loaded {} cached items for {}", feed.items.len(), feed.name);
+                }
+                
+                feeds.push(feed);
                 folder.feed_indices.push(feed_idx);
             }
 
@@ -128,13 +145,23 @@ impl FeedManager {
 
         // Process root-level feeds
         for feed_config in &config.feeds {
-            feeds.push(Feed::new(feed_config.name.clone(), feed_config.url.clone()));
+            let mut feed = Feed::new(feed_config.name.clone(), feed_config.url.clone());
+            
+            // Load cached data if available
+            if let Some(cached) = cache.get(&feed_config.url) {
+                feed.items = cached_to_items(&cached.items);
+                feed.last_updated = cached.last_fetched;
+                info!("Loaded {} cached items for {}", feed.items.len(), feed.name);
+            }
+            
+            feeds.push(feed);
         }
 
         Ok(Self {
             feeds,
             folders,
             client,
+            cache,
         })
     }
 
@@ -142,6 +169,11 @@ impl FeedManager {
     pub async fn refresh_all(&mut self) {
         for i in 0..self.feeds.len() {
             self.refresh_feed(i).await;
+        }
+        
+        // Save cache after refresh
+        if let Err(e) = self.cache.save() {
+            warn!("Failed to save cache: {e}");
         }
     }
 
@@ -156,8 +188,34 @@ impl FeedManager {
 
         debug!("Fetching feed: {name} ({url})");
 
+        // Get current read states to preserve
+        let read_states: HashMap<String, bool> = feed.items
+            .iter()
+            .map(|i| (i.id.clone(), i.read))
+            .collect();
+
         match self.fetch_feed(&url).await {
-            Ok(items) => {
+            Ok(mut items) => {
+                // Restore read states from memory
+                for item in &mut items {
+                    if let Some(&was_read) = read_states.get(&item.id) {
+                        item.read = was_read;
+                    }
+                }
+
+                // Update cache
+                let cached_items: Vec<CachedItem> = items.iter().map(|i| CachedItem {
+                    id: i.id.clone(),
+                    title: i.title.clone(),
+                    link: i.link.clone(),
+                    published: i.published,
+                    summary: i.summary.clone(),
+                    read: i.read,
+                    cached_at: Utc::now(),
+                }).collect();
+                
+                self.cache.update_feed(&url, &name, cached_items, None);
+
                 if let Some(feed) = self.feeds.get_mut(index) {
                     feed.items = items;
                     feed.last_updated = Some(Utc::now());
@@ -167,8 +225,13 @@ impl FeedManager {
             }
             Err(e) => {
                 warn!("Failed to fetch {name}: {e}");
+                
+                // Update cache with error (keeps old items)
+                self.cache.update_feed(&url, &name, Vec::new(), Some(e.to_string()));
+                
                 if let Some(feed) = self.feeds.get_mut(index) {
                     feed.error = Some(e.to_string());
+                    // Keep cached items on error (offline mode)
                 }
             }
         }
@@ -222,4 +285,44 @@ impl FeedManager {
             .filter(|i| !folder_feeds.contains(i))
             .collect()
     }
+
+    /// Save the current state to cache.
+    pub fn save_cache(&mut self) {
+        // Update all feeds in cache with current read states
+        for feed in &self.feeds {
+            let cached_items: Vec<CachedItem> = feed.items.iter().map(|i| CachedItem {
+                id: i.id.clone(),
+                title: i.title.clone(),
+                link: i.link.clone(),
+                published: i.published,
+                summary: i.summary.clone(),
+                read: i.read,
+                cached_at: Utc::now(),
+            }).collect();
+            
+            self.cache.update_feed(&feed.url, &feed.name, cached_items, feed.error.clone());
+        }
+        
+        if let Err(e) = self.cache.save() {
+            warn!("Failed to save cache: {e}");
+        }
+    }
+
+    /// Get cache statistics.
+    #[must_use]
+    pub fn cache_stats(&self) -> super::CacheStats {
+        self.cache.stats()
+    }
+}
+
+/// Convert cached items to feed items.
+fn cached_to_items(cached: &[CachedItem]) -> Vec<FeedItem> {
+    cached.iter().map(|c| FeedItem {
+        id: c.id.clone(),
+        title: c.title.clone(),
+        link: c.link.clone(),
+        published: c.published,
+        summary: c.summary.clone(),
+        read: c.read,
+    }).collect()
 }

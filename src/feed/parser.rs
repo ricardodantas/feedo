@@ -27,7 +27,10 @@ pub fn parse_feed(bytes: &[u8]) -> Result<Vec<FeedItem>> {
                 .map(|s| s.content)
                 .or_else(|| entry.content.and_then(|c| c.body));
 
+            let id = FeedItem::generate_id(link.as_deref(), &title);
+
             FeedItem {
+                id,
                 title,
                 link,
                 published,
