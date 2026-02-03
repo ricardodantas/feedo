@@ -706,7 +706,19 @@ impl App {
     fn open_link(&mut self) {
         if let Some(item) = self.selected_item() {
             if let Some(link) = &item.link {
-                let _ = open::that(link);
+                if let Err(e) = open::that(link) {
+                    self.ui.show_error_dialog(
+                        "Failed to open browser",
+                        Some(format!("Error: {e}\n\nURL: {link}")),
+                    );
+                    return;
+                }
+            } else {
+                self.ui.show_error_dialog(
+                    "No link available",
+                    Some("This article doesn't have a URL to open.".to_string()),
+                );
+                return;
             }
         }
         // Mark as read when opening in browser
@@ -855,7 +867,10 @@ impl App {
         };
 
         let Some(link) = item.link.clone() else {
-            self.ui.set_error("No link available to share");
+            self.ui.show_error_dialog(
+                "No link available",
+                Some("This article doesn't have a URL to share.".to_string()),
+            );
             return;
         };
 
@@ -880,7 +895,10 @@ impl App {
         };
 
         if let Err(e) = open::that(&share_url) {
-            self.ui.set_error(format!("Failed to open browser: {e}"));
+            self.ui.show_error_dialog(
+                "Failed to open browser",
+                Some(format!("Error: {e}\n\nShare URL: {share_url}")),
+            );
         } else {
             let platform = match self.ui.share_platform_index {
                 0 => "X",
