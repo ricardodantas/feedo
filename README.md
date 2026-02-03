@@ -26,17 +26,7 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 
 ## 📸 Screenshots
 
-<p align="center">
-  <img src="screenshots/feedo-main.png" alt="Feedo Main View" width="800">
-  <br>
-  <em>Three-panel interface with Dracula theme</em>
-</p>
-
-<p align="center">
-  <img src="screenshots/feedo-themes.png" alt="Theme Picker" width="800">
-  <br>
-  <em>Built-in theme picker with 15 themes (press <code>t</code>)</em>
-</p>
+> *Screenshots coming soon*
 
 <br>
 
