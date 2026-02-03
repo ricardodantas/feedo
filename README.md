@@ -45,7 +45,19 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 
 ## 🚀 Installation
 
-### From Source (Recommended)
+### Homebrew (macOS/Linux)
+
+```bash
+brew install ricardodantas/tap/feedo
+```
+
+### Cargo (All Platforms)
+
+```bash
+cargo install feedo
+```
+
+### From Source
 
 ```bash
 # Clone the repository
@@ -59,9 +71,12 @@ cargo build --release
 ./target/release/feedo
 ```
 
+### Pre-built Binaries
+
+Download from [GitHub Releases](https://github.com/ricardodantas/feedo/releases) — available for Linux (x64, ARM64, musl), macOS (Intel, Apple Silicon), and Windows.
+
 ### Requirements
 
-- **Rust 1.75+** (2024 edition)
 - A terminal with Unicode support
 - That's it!
 
