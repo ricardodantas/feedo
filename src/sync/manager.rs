@@ -117,7 +117,10 @@ impl SyncManager {
             result.feeds_imported += 1;
         }
 
-        info!("Imported {} feeds, {} already existed", result.feeds_imported, result.feeds_existing);
+        info!(
+            "Imported {} feeds, {} already existed",
+            result.feeds_imported, result.feeds_existing
+        );
         Ok(result)
     }
 
@@ -126,38 +129,37 @@ impl SyncManager {
         let mut result = SyncResult::default();
 
         // Fetch all read item IDs from server
-        let read_items = self.client.stream_item_ids(
-            &self.auth,
-            streams::READ,
-            Some(StreamOptions::with_count(10000)),
-        ).await?;
+        let read_items = self
+            .client
+            .stream_item_ids(
+                &self.auth,
+                streams::READ,
+                Some(StreamOptions::with_count(10000)),
+            )
+            .await?;
 
         info!("Server has {} read items", read_items.item_refs.len());
 
         // Build a set of read item IDs (in decimal form)
-        let read_ids: HashSet<String> = read_items
-            .item_refs
-            .iter()
-            .map(|r| r.id.clone())
-            .collect();
+        let read_ids: HashSet<String> = read_items.item_refs.iter().map(|r| r.id.clone()).collect();
 
         // Get subscriptions to map feed IDs to URLs
         let subs = self.client.subscriptions(&self.auth).await?;
-        let _feed_id_to_url: HashMap<String, String> = subs
-            .iter()
-            .map(|s| (s.id.clone(), s.url.clone()))
-            .collect();
+        let _feed_id_to_url: HashMap<String, String> =
+            subs.iter().map(|s| (s.id.clone(), s.url.clone())).collect();
 
         // For each subscription, fetch items and update local read state
         for sub in &subs {
-            let items = match self.client.stream_contents(
-                &self.auth,
-                &sub.id,
-                Some(StreamOptions::with_count(100)),
-            ).await {
+            let items = match self
+                .client
+                .stream_contents(&self.auth, &sub.id, Some(StreamOptions::with_count(100)))
+                .await
+            {
                 Ok(items) => items,
                 Err(e) => {
-                    result.errors.push(format!("Failed to fetch {}: {}", sub.title, e));
+                    result
+                        .errors
+                        .push(format!("Failed to fetch {}: {}", sub.title, e));
                     continue;
                 }
             };
@@ -170,7 +172,10 @@ impl SyncManager {
                         // Mark as read locally
                         // We need to find the local item ID
                         if let Some(link) = item.link() {
-                            let local_id = crate::feed::CachedItem::generate_id(Some(link), item.title.as_deref().unwrap_or(""));
+                            let local_id = crate::feed::CachedItem::generate_id(
+                                Some(link),
+                                item.title.as_deref().unwrap_or(""),
+                            );
                             cache.set_item_read(&sub.url, &local_id, true);
                             result.items_marked_read += 1;
                         }
@@ -179,12 +184,19 @@ impl SyncManager {
             }
         }
 
-        info!("Marked {} items as read from server", result.items_marked_read);
+        info!(
+            "Marked {} items as read from server",
+            result.items_marked_read
+        );
         Ok(result)
     }
 
     /// Sync local read states to server.
-    pub async fn sync_read_states_to_server(&self, cache: &FeedCache, config: &Config) -> Result<SyncResult> {
+    pub async fn sync_read_states_to_server(
+        &self,
+        cache: &FeedCache,
+        config: &Config,
+    ) -> Result<SyncResult> {
         let mut result = SyncResult::default();
 
         // Get all feed URLs from config
@@ -197,10 +209,8 @@ impl SyncManager {
 
         // Get subscriptions to map URLs to feed IDs
         let subs = self.client.subscriptions(&self.auth).await?;
-        let url_to_feed_id: HashMap<String, String> = subs
-            .iter()
-            .map(|s| (s.url.clone(), s.id.clone()))
-            .collect();
+        let url_to_feed_id: HashMap<String, String> =
+            subs.iter().map(|s| (s.url.clone(), s.id.clone())).collect();
 
         // For each local feed, sync read items
         for feed_url in &feed_urls {
@@ -214,14 +224,16 @@ impl SyncManager {
             };
 
             // Get items from server for this feed
-            let server_items = match self.client.stream_contents(
-                &self.auth,
-                feed_id,
-                Some(StreamOptions::with_count(100)),
-            ).await {
+            let server_items = match self
+                .client
+                .stream_contents(&self.auth, feed_id, Some(StreamOptions::with_count(100)))
+                .await
+            {
                 Ok(items) => items,
                 Err(e) => {
-                    result.errors.push(format!("Failed to fetch {}: {}", feed_url, e));
+                    result
+                        .errors
+                        .push(format!("Failed to fetch {}: {}", feed_url, e));
                     continue;
                 }
             };
@@ -255,10 +267,16 @@ impl SyncManager {
                 match self.client.mark_read(&self.auth, &ids).await {
                     Ok(()) => {
                         result.items_synced_to_server += to_mark_read.len();
-                        info!("Marked {} items as read on server for {}", to_mark_read.len(), feed_url);
+                        info!(
+                            "Marked {} items as read on server for {}",
+                            to_mark_read.len(),
+                            feed_url
+                        );
                     }
                     Err(e) => {
-                        result.errors.push(format!("Failed to mark read on server: {}", e));
+                        result
+                            .errors
+                            .push(format!("Failed to mark read on server: {}", e));
                     }
                 }
             }
@@ -269,7 +287,11 @@ impl SyncManager {
     }
 
     /// Full bidirectional sync.
-    pub async fn full_sync(&self, config: &mut Config, cache: &mut FeedCache) -> Result<SyncResult> {
+    pub async fn full_sync(
+        &self,
+        config: &mut Config,
+        cache: &mut FeedCache,
+    ) -> Result<SyncResult> {
         let mut result = SyncResult::default();
 
         // 1. Import subscriptions from server

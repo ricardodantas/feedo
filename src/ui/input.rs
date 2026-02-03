@@ -33,6 +33,7 @@ impl App {
             super::Mode::About => self.handle_about_key(key),
             super::Mode::Share => self.handle_share_key(key),
             super::Mode::Syncing => KeyResult::Continue, // Ignore input while syncing
+            super::Mode::Help => self.handle_help_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -138,7 +139,8 @@ impl App {
                         Err(e) => self.ui.set_error(format!("Sync failed: {e}")),
                     }
                 } else {
-                    self.ui.set_error("No sync configured. Run 'feedo sync login' first.");
+                    self.ui
+                        .set_error("No sync configured. Run 'feedo sync login' first.");
                 }
             }
             KeyCode::Char(' ') => self.toggle_read(),
@@ -150,6 +152,11 @@ impl App {
             // About dialog
             KeyCode::Char('?') => {
                 self.ui.mode = super::Mode::About;
+            }
+
+            // Help/hotkeys dialog
+            KeyCode::F(1) => {
+                self.ui.mode = super::Mode::Help;
             }
 
             _ => {}
@@ -542,6 +549,17 @@ impl App {
         KeyResult::Continue
     }
 
+    /// Handle keys in help dialog mode.
+    const fn handle_help_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') | KeyCode::F(1) => {
+                self.ui.mode = super::Mode::Normal;
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
     /// Actually delete the feed or folder after confirmation.
     fn perform_delete(&mut self) {
         // Check if we're deleting a folder
@@ -647,7 +665,9 @@ impl App {
 
         self.rebuild_feed_list();
         self.select_first_feed();
-        self.ui.set_status(format!("Deleted folder: {folder_name} ({feed_count} feeds)"));
+        self.ui.set_status(format!(
+            "Deleted folder: {folder_name} ({feed_count} feeds)"
+        ));
         self.ui.reset_delete();
         self.ui.mode = super::Mode::Normal;
     }
@@ -915,8 +935,7 @@ impl App {
                 self.ui.mode = super::Mode::Normal;
             }
             KeyCode::Char('j') | KeyCode::Down => {
-                self.ui.share_platform_index =
-                    (self.ui.share_platform_index + 1) % PLATFORM_COUNT;
+                self.ui.share_platform_index = (self.ui.share_platform_index + 1) % PLATFORM_COUNT;
             }
             KeyCode::Char('k') | KeyCode::Up => {
                 self.ui.share_platform_index = self
@@ -1023,7 +1042,9 @@ impl App {
                 Err(clip_err) => {
                     self.ui.show_error_dialog(
                         "Failed to open browser or copy to clipboard",
-                        Some(format!("Clipboard error: {clip_err}\n\nShare URL: {share_url}")),
+                        Some(format!(
+                            "Clipboard error: {clip_err}\n\nShare URL: {share_url}"
+                        )),
                     );
                 }
             }

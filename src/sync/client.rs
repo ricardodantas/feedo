@@ -88,7 +88,10 @@ impl GReaderClient {
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
@@ -106,7 +109,10 @@ impl GReaderClient {
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
@@ -119,12 +125,18 @@ impl GReaderClient {
 
     /// List subscriptions (feeds).
     pub async fn subscriptions(&self, auth: &AuthToken) -> Result<Vec<Subscription>> {
-        let url = format!("{}/reader/api/0/subscription/list?output=json", self.base_url);
+        let url = format!(
+            "{}/reader/api/0/subscription/list?output=json",
+            self.base_url
+        );
 
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
@@ -143,7 +155,10 @@ impl GReaderClient {
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
@@ -162,7 +177,10 @@ impl GReaderClient {
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
@@ -218,12 +236,18 @@ impl GReaderClient {
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
         if !response.status().is_success() {
-            return Err(eyre!("Failed to get stream contents: {}", response.status()));
+            return Err(eyre!(
+                "Failed to get stream contents: {}",
+                response.status()
+            ));
         }
 
         Ok(response.json().await?)
@@ -263,12 +287,18 @@ impl GReaderClient {
         let response = self
             .client
             .get(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .send()
             .await?;
 
         if !response.status().is_success() {
-            return Err(eyre!("Failed to get stream item IDs: {}", response.status()));
+            return Err(eyre!(
+                "Failed to get stream item IDs: {}",
+                response.status()
+            ));
         }
 
         Ok(response.json().await?)
@@ -280,7 +310,10 @@ impl GReaderClient {
         auth: &AuthToken,
         item_ids: &[&str],
     ) -> Result<StreamContents> {
-        let url = format!("{}/reader/api/0/stream/items/contents?output=json", self.base_url);
+        let url = format!(
+            "{}/reader/api/0/stream/items/contents?output=json",
+            self.base_url
+        );
 
         // Build form data with multiple 'i' parameters
         let mut form_data = Vec::new();
@@ -291,7 +324,10 @@ impl GReaderClient {
         let response = self
             .client
             .post(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .form(&form_data)
             .send()
             .await?;
@@ -338,7 +374,10 @@ impl GReaderClient {
         let response = self
             .client
             .post(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .form(&form_data)
             .send()
             .await?;
@@ -401,7 +440,10 @@ impl GReaderClient {
         let response = self
             .client
             .post(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .form(&form_data)
             .send()
             .await?;
@@ -425,11 +467,8 @@ impl GReaderClient {
         let url = format!("{}/reader/api/0/subscription/edit", self.base_url);
         let feed_id = format!("feed/{}", feed_url);
 
-        let mut form_data: Vec<(&str, &str)> = vec![
-            ("T", token.as_str()),
-            ("ac", "subscribe"),
-            ("s", &feed_id),
-        ];
+        let mut form_data: Vec<(&str, &str)> =
+            vec![("T", token.as_str()), ("ac", "subscribe"), ("s", &feed_id)];
 
         if let Some(t) = title {
             form_data.push(("t", t));
@@ -442,7 +481,10 @@ impl GReaderClient {
         let response = self
             .client
             .post(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .form(&form_data)
             .send()
             .await?;
@@ -464,13 +506,19 @@ impl GReaderClient {
         let response = self
             .client
             .post(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .form(&form_data)
             .send()
             .await?;
 
         if !response.status().is_success() {
-            return Err(eyre!("Failed to remove subscription: {}", response.status()));
+            return Err(eyre!(
+                "Failed to remove subscription: {}",
+                response.status()
+            ));
         }
 
         Ok(())
@@ -496,13 +544,19 @@ impl GReaderClient {
         let response = self
             .client
             .post(&url)
-            .header(header::AUTHORIZATION, format!("GoogleLogin auth={}", auth.token))
+            .header(
+                header::AUTHORIZATION,
+                format!("GoogleLogin auth={}", auth.token),
+            )
             .form(&form_data)
             .send()
             .await?;
 
         if !response.status().is_success() {
-            return Err(eyre!("Failed to rename subscription: {}", response.status()));
+            return Err(eyre!(
+                "Failed to rename subscription: {}",
+                response.status()
+            ));
         }
 
         Ok(())

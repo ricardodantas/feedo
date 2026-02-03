@@ -24,9 +24,12 @@ async fn main() -> Result<()> {
         Command::Import(path) => import_opml(&path),
         Command::Export(path) => export_opml(&path),
         Command::Sync => sync_feeds().await,
-        Command::SyncLogin { server, username, password, provider } => {
-            sync_login(&server, &username, &password, provider).await
-        }
+        Command::SyncLogin {
+            server,
+            username,
+            password,
+            provider,
+        } => sync_login(&server, &username, &password, provider).await,
         Command::SyncStatus => sync_status().await,
         Command::Help => {
             print_help();
@@ -86,13 +89,15 @@ fn parse_args() -> Result<Command> {
                         let server = args.get(3)
                             .ok_or_else(|| color_eyre::eyre::eyre!("Missing server URL\nUsage: feedo sync login <server> <username> <password>"))?
                             .clone();
-                        let username = args.get(4)
+                        let username = args
+                            .get(4)
                             .ok_or_else(|| color_eyre::eyre::eyre!("Missing username"))?
                             .clone();
-                        let password = args.get(5)
+                        let password = args
+                            .get(5)
                             .ok_or_else(|| color_eyre::eyre::eyre!("Missing password"))?
                             .clone();
-                        
+
                         // Check for --provider flag
                         let mut provider = SyncProvider::GReader;
                         for (i, arg) in args.iter().enumerate() {
@@ -106,8 +111,13 @@ fn parse_args() -> Result<Command> {
                                 }
                             }
                         }
-                        
-                        Ok(Command::SyncLogin { server, username, password, provider })
+
+                        Ok(Command::SyncLogin {
+                            server,
+                            username,
+                            password,
+                            provider,
+                        })
                     }
                     "status" => Ok(Command::SyncStatus),
                     _ => Ok(Command::Sync),
@@ -215,21 +225,26 @@ fn export_opml(path: &Path) -> Result<()> {
     Ok(())
 }
 
-async fn sync_login(server: &str, username: &str, password: &str, provider: SyncProvider) -> Result<()> {
+async fn sync_login(
+    server: &str,
+    username: &str,
+    password: &str,
+    provider: SyncProvider,
+) -> Result<()> {
     println!("(◕ᴥ◕) Connecting to {server}...");
-    
+
     // Test the connection
     let client = GReaderClient::new(server);
     let auth = client.login(username, password).await?;
-    
+
     // Verify by fetching user info
     let user_info = client.user_info(&auth).await?;
     println!("✓ Logged in as: {}", user_info.user_name);
-    
+
     // Fetch subscription count
     let subs = client.subscriptions(&auth).await?;
     println!("✓ Found {} subscriptions", subs.len());
-    
+
     // Save to config
     let mut config = Config::load()?;
     config.sync = Some(SyncConfig {
@@ -239,26 +254,36 @@ async fn sync_login(server: &str, username: &str, password: &str, provider: Sync
         password: Some(password.to_string()),
     });
     config.save()?;
-    
+
     println!("\n(◕ᴥ◕) Sync configured! Run 'feedo sync' to sync your feeds.");
     Ok(())
 }
 
 async fn sync_status() -> Result<()> {
     let config = Config::load()?;
-    
+
     if let Some(sync) = &config.sync {
         println!("(◕ᴥ◕) Sync Configuration\n");
         println!("  Provider: {:?}", sync.provider);
         println!("  Server:   {}", sync.server);
         println!("  Username: {}", sync.username);
-        println!("  Password: {}", if sync.password.is_some() { "****" } else { "(not set)" });
-        
+        println!(
+            "  Password: {}",
+            if sync.password.is_some() {
+                "****"
+            } else {
+                "(not set)"
+            }
+        );
+
         // Try to connect and show stats
         if sync.password.is_some() {
             println!("\nTesting connection...");
             let client = GReaderClient::new(&sync.server);
-            match client.login(&sync.username, sync.password.as_deref().unwrap_or("")).await {
+            match client
+                .login(&sync.username, sync.password.as_deref().unwrap_or(""))
+                .await
+            {
                 Ok(auth) => {
                     println!("✓ Connection successful");
                     if let Ok(subs) = client.subscriptions(&auth).await {
@@ -282,37 +307,48 @@ async fn sync_status() -> Result<()> {
         println!("  • Inoreader: https://www.inoreader.com");
         println!("  • The Old Reader: https://theoldreader.com");
     }
-    
+
     Ok(())
 }
 
 async fn sync_feeds() -> Result<()> {
     let mut config = Config::load()?;
-    
-    let sync = config.sync.clone()
-        .ok_or_else(|| color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first."))?;
-    
-    let password = sync.password.as_deref()
-        .ok_or_else(|| color_eyre::eyre::eyre!("No password stored. Run 'feedo sync login' again."))?;
-    
+
+    let sync = config.sync.clone().ok_or_else(|| {
+        color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first.")
+    })?;
+
+    let password = sync.password.as_deref().ok_or_else(|| {
+        color_eyre::eyre::eyre!("No password stored. Run 'feedo sync login' again.")
+    })?;
+
     println!("(◕ᴥ◕) Syncing with {}...\n", sync.server);
-    
+
     // Load cache
     let mut cache = feedo::FeedCache::load()?;
-    
+
     // Connect and run full sync
     let manager = feedo::SyncManager::connect(&sync.server, &sync.username, password).await?;
     let result = manager.full_sync(&mut config, &mut cache).await?;
-    
+
     // Save changes
     config.save()?;
     cache.save()?;
-    
+
     // Print results
-    println!("✓ Imported {} new feeds ({} already existed)", result.feeds_imported, result.feeds_existing);
-    println!("✓ Marked {} items as read (from server)", result.items_marked_read);
-    println!("✓ Synced {} items to server (from local)", result.items_synced_to_server);
-    
+    println!(
+        "✓ Imported {} new feeds ({} already existed)",
+        result.feeds_imported, result.feeds_existing
+    );
+    println!(
+        "✓ Marked {} items as read (from server)",
+        result.items_marked_read
+    );
+    println!(
+        "✓ Synced {} items to server (from local)",
+        result.items_synced_to_server
+    );
+
     if !result.errors.is_empty() {
         println!("\n⚠ {} warnings:", result.errors.len());
         for err in &result.errors[..result.errors.len().min(5)] {
@@ -322,7 +358,7 @@ async fn sync_feeds() -> Result<()> {
             println!("  ... and {} more", result.errors.len() - 5);
         }
     }
-    
+
     println!("\n(◕ᴥ◕) Sync complete!");
     Ok(())
 }

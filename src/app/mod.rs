@@ -180,10 +180,15 @@ impl App {
     pub async fn run_sync(&mut self) -> Result<()> {
         use crate::sync::SyncManager;
 
-        let sync = self.config.sync.clone()
+        let sync = self
+            .config
+            .sync
+            .clone()
             .ok_or_else(|| color_eyre::eyre::eyre!("No sync configured"))?;
 
-        let password = sync.password.as_deref()
+        let password = sync
+            .password
+            .as_deref()
             .ok_or_else(|| color_eyre::eyre::eyre!("No password stored"))?;
 
         self.ui.syncing = true;
@@ -192,7 +197,9 @@ impl App {
         let manager = SyncManager::connect(&sync.server, &sync.username, password).await?;
 
         self.ui.sync_status = Some("Syncing subscriptions...".to_string());
-        let result = manager.full_sync(&mut self.config, &mut self.feeds.cache).await?;
+        let result = manager
+            .full_sync(&mut self.config, &mut self.feeds.cache)
+            .await?;
 
         // Save changes
         self.config.save()?;

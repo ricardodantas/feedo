@@ -42,6 +42,8 @@ pub enum Mode {
     Share,
     /// Syncing in progress.
     Syncing,
+    /// Help/hotkeys dialog mode.
+    Help,
 }
 
 /// Item in the feed list (can be folder or feed).

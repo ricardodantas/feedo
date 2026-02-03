@@ -88,6 +88,10 @@ impl App {
             self.render_share_dialog(frame, area);
         }
 
+        if self.ui.mode == Mode::Help {
+            self.render_help_dialog(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -350,7 +354,9 @@ impl App {
             Span::styled(format!(" ☁ {msg}"), Style::default().fg(accent))
         } else {
             Span::styled(
-                format!("{sync_indicator} ↑↓ navigate │ ↵ select │ n add │ r refresh │ S sync │ o open │ s share │ a mark all read │ / search │ t theme │ ? about │ q quit"),
+                format!(
+                    "{sync_indicator} n add │ d delete │ r refresh │ / search │ s share │ a mark read │ t theme │ F1 help │ q quit"
+                ),
                 Style::default().fg(muted),
             )
         };
@@ -735,27 +741,28 @@ impl App {
         frame.render_widget(Clear, popup_area);
 
         // Determine what we're deleting (folder or feed)
-        let (item_name, item_type, extra_info) = if let Some(folder_idx) = self.ui.pending_delete_folder {
-            let folder = self.config.folders.get(folder_idx);
-            let name = folder.map_or("this folder", |f| f.name.as_str());
-            let feed_count = folder.map_or(0, |f| f.feeds.len());
-            (
-                name.to_string(),
-                "folder",
-                format!("This will remove the folder and all {feed_count} feeds inside."),
-            )
-        } else {
-            let feed_name = self
-                .ui
-                .pending_delete_feed
-                .and_then(|idx| self.feeds.feeds.get(idx))
-                .map_or("this feed".to_string(), |f| f.name.clone());
-            (
-                feed_name,
-                "feed",
-                "This will remove the feed from your subscriptions.".to_string(),
-            )
-        };
+        let (item_name, item_type, extra_info) =
+            if let Some(folder_idx) = self.ui.pending_delete_folder {
+                let folder = self.config.folders.get(folder_idx);
+                let name = folder.map_or("this folder", |f| f.name.as_str());
+                let feed_count = folder.map_or(0, |f| f.feeds.len());
+                (
+                    name.to_string(),
+                    "folder",
+                    format!("This will remove the folder and all {feed_count} feeds inside."),
+                )
+            } else {
+                let feed_name = self
+                    .ui
+                    .pending_delete_feed
+                    .and_then(|idx| self.feeds.feeds.get(idx))
+                    .map_or("this feed".to_string(), |f| f.name.clone());
+                (
+                    feed_name,
+                    "feed",
+                    "This will remove the feed from your subscriptions.".to_string(),
+                )
+            };
 
         let text = vec![
             Line::from(""),
@@ -764,10 +771,7 @@ impl App {
                 Style::default().fg(accent).bold(),
             )),
             Line::from(""),
-            Line::from(Span::styled(
-                extra_info,
-                Style::default().fg(muted),
-            )),
+            Line::from(Span::styled(extra_info, Style::default().fg(muted))),
             Line::from(""),
             Line::from(vec![
                 Span::styled(" [Y] ", Style::default().fg(accent).bold()),
@@ -936,6 +940,129 @@ impl App {
                     .title(" 🐕 About Feedo ")
                     .title_style(Style::default().fg(accent).bold()),
             );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    /// Render help/hotkeys dialog overlay.
+    #[allow(clippy::too_many_lines)]
+    fn render_help_dialog(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let muted = self.theme.muted();
+        let fg = self.theme.fg();
+        let popup_area = centered_rect(65, 80, area);
+
+        frame.render_widget(Clear, popup_area);
+
+        let key_style = Style::default().fg(accent).bold();
+        let desc_style = Style::default().fg(fg);
+        let section_style = Style::default().fg(muted).italic();
+
+        let lines = vec![
+            Line::from(Span::styled("── Navigation ──", section_style)),
+            Line::from(vec![
+                Span::styled("  j/↓    ", key_style),
+                Span::styled("Move down", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  k/↑    ", key_style),
+                Span::styled("Move up", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  Tab    ", key_style),
+                Span::styled("Switch panel (Feeds → Items → Content)", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  g      ", key_style),
+                Span::styled("Go to top", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  G      ", key_style),
+                Span::styled("Go to bottom", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  Enter  ", key_style),
+                Span::styled("Open link / expand folder", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  v      ", key_style),
+                Span::styled("Toggle content panel", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled("── Feeds ──", section_style)),
+            Line::from(vec![
+                Span::styled("  n      ", key_style),
+                Span::styled("Add new feed", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  d      ", key_style),
+                Span::styled("Delete feed/folder", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  r      ", key_style),
+                Span::styled("Refresh feeds", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  R      ", key_style),
+                Span::styled("Refresh all feeds", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled("── Reading ──", section_style)),
+            Line::from(vec![
+                Span::styled("  Space  ", key_style),
+                Span::styled("Toggle read/unread", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  a      ", key_style),
+                Span::styled("Mark all read in current feed", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  s      ", key_style),
+                Span::styled("Share article", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled("── Search & Sync ──", section_style)),
+            Line::from(vec![
+                Span::styled("  /      ", key_style),
+                Span::styled("Search articles", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  S      ", key_style),
+                Span::styled("Sync with cloud (if configured)", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled("── Other ──", section_style)),
+            Line::from(vec![
+                Span::styled("  t      ", key_style),
+                Span::styled("Change theme", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  F1     ", key_style),
+                Span::styled("Show this help", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  ?      ", key_style),
+                Span::styled("About Feedo", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  q      ", key_style),
+                Span::styled("Quit", desc_style),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" [Esc] ", Style::default().fg(muted)),
+                Span::raw("Close"),
+            ]),
+        ];
+
+        let paragraph = Paragraph::new(lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(accent))
+                .title(" ⌨️  Keyboard Shortcuts ")
+                .title_style(Style::default().fg(accent).bold()),
+        );
 
         frame.render_widget(paragraph, popup_area);
     }
