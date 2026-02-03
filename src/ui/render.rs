@@ -950,121 +950,268 @@ impl App {
         let accent = self.theme.accent();
         let muted = self.theme.muted();
         let fg = self.theme.fg();
-        let popup_area = centered_rect(65, 80, area);
+        let bg = self.theme.bg();
 
+        // Larger, more prominent popup
+        let popup_area = centered_rect(75, 85, area);
         frame.render_widget(Clear, popup_area);
 
-        let key_style = Style::default().fg(accent).bold();
-        let desc_style = Style::default().fg(fg);
-        let section_style = Style::default().fg(muted).italic();
+        // Create a visually rich layout with header and columns
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(5), // Header with logo
+                Constraint::Min(0),    // Content
+                Constraint::Length(2), // Footer
+            ])
+            .margin(1)
+            .split(popup_area);
 
-        let lines = vec![
-            Line::from(Span::styled("── Navigation ──", section_style)),
+        // ═══════════════════════════════════════════════════════════════
+        // HEADER - Stylized title with dog mascot
+        // ═══════════════════════════════════════════════════════════════
+        let header_lines = vec![
+            Line::from(vec![Span::styled(
+                "  ╭─────────────────────────────────────────────────────────────╮",
+                Style::default().fg(muted),
+            )]),
             Line::from(vec![
-                Span::styled("  j/↓    ", key_style),
-                Span::styled("Move down", desc_style),
+                Span::styled("  │  ", Style::default().fg(muted)),
+                Span::styled("⌨️  ", Style::default()),
+                Span::styled(
+                    "KEYBOARD SHORTCUTS",
+                    Style::default()
+                        .fg(accent)
+                        .bold()
+                        .add_modifier(Modifier::UNDERLINED),
+                ),
+                Span::styled("                                      ", Style::default()),
+                Span::styled("(◕ᴥ◕)", Style::default().fg(accent)),
+                Span::styled("  │", Style::default().fg(muted)),
             ]),
+            Line::from(vec![Span::styled(
+                "  ╰─────────────────────────────────────────────────────────────╯",
+                Style::default().fg(muted),
+            )]),
+        ];
+        let header = Paragraph::new(header_lines);
+        frame.render_widget(header, layout[0]);
+
+        // ═══════════════════════════════════════════════════════════════
+        // CONTENT - Two-column layout for shortcuts
+        // ═══════════════════════════════════════════════════════════════
+        let columns = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(layout[1]);
+
+        // Key badge style
+        let key_style = Style::default().fg(bg).bg(accent).bold();
+        let bar_style = Style::default().fg(muted);
+
+        // ─── LEFT COLUMN ───
+        let left_lines: Vec<Line> = vec![
+            // Navigation section
             Line::from(vec![
-                Span::styled("  k/↑    ", key_style),
-                Span::styled("Move up", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  Tab    ", key_style),
-                Span::styled("Switch panel (Feeds → Items → Content)", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  g      ", key_style),
-                Span::styled("Go to top", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  G      ", key_style),
-                Span::styled("Go to bottom", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  Enter  ", key_style),
-                Span::styled("Open link / expand folder", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  v      ", key_style),
-                Span::styled("Toggle content panel", desc_style),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled("── Feeds ──", section_style)),
-            Line::from(vec![
-                Span::styled("  n      ", key_style),
-                Span::styled("Add new feed", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  d      ", key_style),
-                Span::styled("Delete feed/folder", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  r      ", key_style),
-                Span::styled("Refresh feeds", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  R      ", key_style),
-                Span::styled("Refresh all feeds", desc_style),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled("── Reading ──", section_style)),
-            Line::from(vec![
-                Span::styled("  Space  ", key_style),
-                Span::styled("Toggle read/unread", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  a      ", key_style),
-                Span::styled("Mark all read in current feed", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  s      ", key_style),
-                Span::styled("Share article", desc_style),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled("── Search & Sync ──", section_style)),
-            Line::from(vec![
-                Span::styled("  /      ", key_style),
-                Span::styled("Search articles", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  S      ", key_style),
-                Span::styled("Sync with cloud (if configured)", desc_style),
-            ]),
-            Line::from(""),
-            Line::from(Span::styled("── Other ──", section_style)),
-            Line::from(vec![
-                Span::styled("  t      ", key_style),
-                Span::styled("Change theme", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  F1     ", key_style),
-                Span::styled("Show this help", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  ?      ", key_style),
-                Span::styled("About Feedo", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  q      ", key_style),
-                Span::styled("Quit", desc_style),
+                Span::styled("  ◆ ", Style::default().fg(accent)),
+                Span::styled("NAVIGATION", Style::default().fg(accent).bold()),
             ]),
             Line::from(""),
             Line::from(vec![
-                Span::styled(" [Esc] ", Style::default().fg(muted)),
-                Span::raw("Close"),
+                Span::styled(" ┃", bar_style),
+                Span::styled(" j / ↓ ", key_style),
+                Span::raw(" "),
+                Span::styled("Move down", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled(" k / ↑ ", key_style),
+                Span::raw(" "),
+                Span::styled("Move up", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("  Tab  ", key_style),
+                Span::raw(" "),
+                Span::styled("Next panel", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   g   ", key_style),
+                Span::raw(" "),
+                Span::styled("Jump to top", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   G   ", key_style),
+                Span::raw(" "),
+                Span::styled("Jump to bottom", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled(" Enter ", key_style),
+                Span::raw(" "),
+                Span::styled("Select / Open", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled(" h / ← ", key_style),
+                Span::raw(" "),
+                Span::styled("Go back", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   v   ", key_style),
+                Span::raw(" "),
+                Span::styled("Toggle preview", Style::default().fg(fg)),
+            ]),
+            Line::from(""),
+            // Feeds section
+            Line::from(vec![
+                Span::styled("  ◆ ", Style::default().fg(accent)),
+                Span::styled("FEEDS", Style::default().fg(accent).bold()),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   n   ", key_style),
+                Span::raw(" "),
+                Span::styled("Add new feed", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   d   ", key_style),
+                Span::raw(" "),
+                Span::styled("Delete feed", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   r   ", key_style),
+                Span::raw(" "),
+                Span::styled("Refresh current", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   R   ", key_style),
+                Span::raw(" "),
+                Span::styled("Refresh all", Style::default().fg(fg)),
             ]),
         ];
 
-        let paragraph = Paragraph::new(lines).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(Style::default().fg(accent))
-                .title(" ⌨️  Keyboard Shortcuts ")
-                .title_style(Style::default().fg(accent).bold()),
-        );
+        let left_para = Paragraph::new(left_lines);
+        frame.render_widget(left_para, columns[0]);
 
-        frame.render_widget(paragraph, popup_area);
+        // ─── RIGHT COLUMN ───
+        let right_lines: Vec<Line> = vec![
+            // Reading section
+            Line::from(vec![
+                Span::styled("  ◆ ", Style::default().fg(accent)),
+                Span::styled("READING", Style::default().fg(accent).bold()),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled(" Space ", key_style),
+                Span::raw(" "),
+                Span::styled("Toggle read", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   a   ", key_style),
+                Span::raw(" "),
+                Span::styled("Mark all read", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   o   ", key_style),
+                Span::raw(" "),
+                Span::styled("Open in browser", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   s   ", key_style),
+                Span::raw(" "),
+                Span::styled("Share article", Style::default().fg(fg)),
+            ]),
+            Line::from(""),
+            // Search & Sync section
+            Line::from(vec![
+                Span::styled("  ◆ ", Style::default().fg(accent)),
+                Span::styled("SEARCH & SYNC", Style::default().fg(accent).bold()),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   /   ", key_style),
+                Span::raw(" "),
+                Span::styled("Search articles", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   S   ", key_style),
+                Span::raw(" "),
+                Span::styled("Cloud sync", Style::default().fg(fg)),
+            ]),
+            Line::from(""),
+            // App section
+            Line::from(vec![
+                Span::styled("  ◆ ", Style::default().fg(accent)),
+                Span::styled("APP", Style::default().fg(accent).bold()),
+            ]),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   t   ", key_style),
+                Span::raw(" "),
+                Span::styled("Change theme", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("  F1   ", key_style),
+                Span::raw(" "),
+                Span::styled("This help", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   ?   ", key_style),
+                Span::raw(" "),
+                Span::styled("About Feedo", Style::default().fg(fg)),
+            ]),
+            Line::from(vec![
+                Span::styled(" ┃", bar_style),
+                Span::styled("   q   ", key_style),
+                Span::raw(" "),
+                Span::styled("Quit", Style::default().fg(fg)),
+            ]),
+        ];
+
+        let right_para = Paragraph::new(right_lines);
+        frame.render_widget(right_para, columns[1]);
+
+        // ═══════════════════════════════════════════════════════════════
+        // FOOTER - Dismiss hint
+        // ═══════════════════════════════════════════════════════════════
+        let footer = Line::from(vec![
+            Span::styled("  Press ", Style::default().fg(muted)),
+            Span::styled("Esc", Style::default().fg(accent).bold()),
+            Span::styled(" or ", Style::default().fg(muted)),
+            Span::styled("F1", Style::default().fg(accent).bold()),
+            Span::styled(" to close", Style::default().fg(muted)),
+            Span::styled("  │  ", Style::default().fg(muted)),
+            Span::styled("vim-style navigation", Style::default().fg(muted).italic()),
+        ]);
+        let footer_para = Paragraph::new(footer).alignment(ratatui::layout::Alignment::Center);
+        frame.render_widget(footer_para, layout[2]);
+
+        // ═══════════════════════════════════════════════════════════════
+        // BORDER - Draw the outer frame
+        // ═══════════════════════════════════════════════════════════════
+        let border = Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Double)
+            .border_style(Style::default().fg(accent))
+            .style(Style::default().bg(bg));
+        frame.render_widget(border, popup_area);
     }
 
     /// Render share dialog overlay.
