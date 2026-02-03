@@ -10,6 +10,7 @@
   <br>
   <b>(◕ᴥ◕) Your terminal RSS companion</b>
   <br><br>
+  <a href="https://ricardodantas.github.io/feedo/">🌐 Website</a> •
   <a href="#installation">Installation</a> •
   <a href="#features">Features</a> •
   <a href="#usage">Usage</a> •
@@ -167,13 +168,14 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `g` | Jump to top |
 | `G` | Jump to bottom |
 | `Tab` | Switch between panels |
+| `v` | Toggle content preview |
 
 ### Actions
 
 | Key | Action |
 |-----|--------|
 | `n` | Add new feed (with auto-discovery) |
-| `d` / `Delete` | Delete selected feed |
+| `d` / `Delete` | Delete selected feed/folder |
 | `r` | Refresh all feeds |
 | `S` | Sync with server (if configured) |
 | `o` | Open article in browser |
@@ -182,6 +184,7 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `a` | Mark all as read (selected feed) |
 | `/` | Open search |
 | `t` | Open theme picker |
+| `F1` | Show keyboard shortcuts |
 | `?` | About |
 | `q` / `Esc` | Quit |
 
