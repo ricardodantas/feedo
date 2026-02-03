@@ -322,20 +322,58 @@ Feedo supports syncing with RSS servers that implement the **Google Reader API**
 | **Inoreader** | Requires OAuth 2.0 / App registration (not plain password login) |
 | **Feedly** | Uses proprietary API, not Google Reader compatible |
 
-#### Quick Start with FreshRSS (Docker)
+#### Quick Start: FreshRSS (Docker)
 
 ```bash
-# Spin up FreshRSS locally
+# 1. Spin up FreshRSS
 podman run -d --name freshrss -p 8080:80 freshrss/freshrss
 # Or: docker run -d --name freshrss -p 8080:80 freshrss/freshrss
 
-# Visit http://localhost:8080, complete setup
-# Settings > Profile > set API password
-# Settings > Authentication > enable API access
+# 2. Visit http://localhost:8080 and complete the setup wizard
+#    - Create your admin account
+#    - Choose SQLite for simplicity
 
-# Connect Feedo
+# 3. Enable API access:
+#    Settings → Authentication → ☑ Allow API access
+
+# 4. Set API password:
+#    Settings → Profile → API password (can be different from login password)
+
+# 5. Connect Feedo
 feedo sync login http://localhost:8080/api/greader.php your_user your_api_password
+feedo sync status  # Verify connection
+feedo sync         # Run first sync
 ```
+
+#### Quick Start: Miniflux (Docker)
+
+```bash
+# 1. Spin up Miniflux with PostgreSQL
+podman run -d --name miniflux-db -e POSTGRES_USER=miniflux \
+  -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=miniflux postgres:15
+
+podman run -d --name miniflux -p 8080:8080 \
+  -e DATABASE_URL="postgres://miniflux:secret@miniflux-db/miniflux?sslmode=disable" \
+  -e RUN_MIGRATIONS=1 \
+  -e CREATE_ADMIN=1 \
+  -e ADMIN_USERNAME=admin \
+  -e ADMIN_PASSWORD=admin123 \
+  miniflux/miniflux:latest
+
+# Or with docker-compose (recommended for production)
+
+# 2. Visit http://localhost:8080 and login with admin/admin123
+
+# 3. Enable Fever API (used for Google Reader compatibility):
+#    Settings → Integrations → Fever → Enable & set password
+
+# 4. Connect Feedo (note: Miniflux uses /v1/ endpoint)
+feedo sync login http://localhost:8080/v1/ admin your_fever_password
+feedo sync status
+feedo sync
+```
+
+**Tip:** For production, see [FreshRSS Docker docs](https://github.com/FreshRSS/FreshRSS/tree/edge/Docker) or [Miniflux installation guide](https://miniflux.app/docs/installation.html).
 
 #### Setup
 
