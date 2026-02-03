@@ -1,5 +1,7 @@
 //! UI state management.
 
+use crate::feed::DiscoveredFeed;
+
 /// Active panel in the UI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Panel {
@@ -22,6 +24,12 @@ pub enum Mode {
     Search,
     /// Theme picker mode.
     ThemePicker,
+    /// Add feed mode - entering URL.
+    AddFeedUrl,
+    /// Add feed mode - selecting discovered feed.
+    AddFeedSelect,
+    /// Add feed mode - entering custom name.
+    AddFeedName,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -78,6 +86,23 @@ pub struct UiState {
 
     /// Status message to display.
     pub status: Option<String>,
+
+    // --- Add Feed state ---
+    
+    /// URL input for adding feed.
+    pub add_feed_url: String,
+
+    /// Discovered feeds from URL.
+    pub discovered_feeds: Vec<DiscoveredFeed>,
+
+    /// Selected discovered feed index.
+    pub discovered_feed_index: usize,
+
+    /// Custom name for the feed (empty = use discovered title).
+    pub add_feed_name: String,
+
+    /// Whether currently discovering feeds (loading state).
+    pub discovering: bool,
 }
 
 
@@ -100,5 +125,14 @@ impl UiState {
     /// Clear status message.
     pub fn clear_status(&mut self) {
         self.status = None;
+    }
+
+    /// Reset add feed state.
+    pub fn reset_add_feed(&mut self) {
+        self.add_feed_url.clear();
+        self.discovered_feeds.clear();
+        self.discovered_feed_index = 0;
+        self.add_feed_name.clear();
+        self.discovering = false;
     }
 }

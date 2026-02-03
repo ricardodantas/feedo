@@ -3,6 +3,8 @@
 use crossterm::event::KeyCode;
 
 use crate::app::App;
+use crate::config::FeedConfig;
+use crate::feed::FeedDiscovery;
 
 /// Result of handling a key press.
 pub enum KeyResult {
@@ -22,6 +24,9 @@ impl App {
         match self.ui.mode {
             super::Mode::Search => self.handle_search_key(key),
             super::Mode::ThemePicker => self.handle_theme_picker_key(key),
+            super::Mode::AddFeedUrl => self.handle_add_feed_url_key(key).await,
+            super::Mode::AddFeedSelect => self.handle_add_feed_select_key(key),
+            super::Mode::AddFeedName => self.handle_add_feed_name_key(key).await,
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -96,6 +101,12 @@ impl App {
                     .unwrap_or(0);
             }
 
+            // Add feed
+            KeyCode::Char('n') => {
+                self.ui.reset_add_feed();
+                self.ui.mode = super::Mode::AddFeedUrl;
+            }
+
             // Navigation
             KeyCode::Tab => self.next_panel(),
             KeyCode::Char('j') | KeyCode::Down => self.move_down(),
@@ -114,6 +125,9 @@ impl App {
             KeyCode::Char('o') => self.open_link(),
             KeyCode::Char(' ') => self.toggle_read(),
             KeyCode::Char('a') => self.mark_all_read(),
+
+            // Delete feed
+            KeyCode::Char('d') | KeyCode::Delete => self.delete_selected_feed(),
 
             _ => {}
         }
@@ -159,6 +173,211 @@ impl App {
             _ => {}
         }
         KeyResult::Continue
+    }
+
+    async fn handle_add_feed_url_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Esc => {
+                self.ui.reset_add_feed();
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Enter => {
+                if !self.ui.add_feed_url.is_empty() {
+                    self.discover_feeds().await;
+                }
+            }
+            KeyCode::Backspace => {
+                self.ui.add_feed_url.pop();
+            }
+            KeyCode::Char(c) => {
+                self.ui.add_feed_url.push(c);
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    fn handle_add_feed_select_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Esc => {
+                self.ui.reset_add_feed();
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Enter => {
+                // Move to name input with suggested name
+                if let Some(feed) = self.ui.discovered_feeds.get(self.ui.discovered_feed_index) {
+                    self.ui.add_feed_name = feed.title.clone().unwrap_or_default();
+                }
+                self.ui.mode = super::Mode::AddFeedName;
+            }
+            KeyCode::Char('j') | KeyCode::Down => {
+                if !self.ui.discovered_feeds.is_empty() {
+                    self.ui.discovered_feed_index = 
+                        (self.ui.discovered_feed_index + 1) % self.ui.discovered_feeds.len();
+                }
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if !self.ui.discovered_feeds.is_empty() {
+                    self.ui.discovered_feed_index = self
+                        .ui
+                        .discovered_feed_index
+                        .checked_sub(1)
+                        .unwrap_or(self.ui.discovered_feeds.len() - 1);
+                }
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    async fn handle_add_feed_name_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Esc => {
+                // Go back to feed selection
+                self.ui.mode = super::Mode::AddFeedSelect;
+            }
+            KeyCode::Enter => {
+                self.add_discovered_feed().await;
+            }
+            KeyCode::Backspace => {
+                self.ui.add_feed_name.pop();
+            }
+            KeyCode::Char(c) => {
+                self.ui.add_feed_name.push(c);
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Discover feeds from the entered URL.
+    async fn discover_feeds(&mut self) {
+        self.ui.discovering = true;
+        
+        match FeedDiscovery::new() {
+            Ok(discovery) => {
+                match discovery.discover(&self.ui.add_feed_url).await {
+                    Ok(feeds) => {
+                        self.ui.discovered_feeds = feeds;
+                        self.ui.discovered_feed_index = 0;
+                        
+                        if self.ui.discovered_feeds.len() == 1 {
+                            // Only one feed found, go straight to name input
+                            if let Some(feed) = self.ui.discovered_feeds.first() {
+                                self.ui.add_feed_name = feed.title.clone().unwrap_or_default();
+                            }
+                            self.ui.mode = super::Mode::AddFeedName;
+                        } else {
+                            // Multiple feeds, let user choose
+                            self.ui.mode = super::Mode::AddFeedSelect;
+                        }
+                    }
+                    Err(e) => {
+                        self.ui.set_error(format!("No feeds found: {e}"));
+                        // Stay in URL input mode
+                    }
+                }
+            }
+            Err(e) => {
+                self.ui.set_error(format!("Discovery error: {e}"));
+            }
+        }
+        
+        self.ui.discovering = false;
+    }
+
+    /// Add the selected discovered feed.
+    async fn add_discovered_feed(&mut self) {
+        let Some(discovered) = self.ui.discovered_feeds.get(self.ui.discovered_feed_index) else {
+            self.ui.set_error("No feed selected");
+            return;
+        };
+
+        let name = if self.ui.add_feed_name.is_empty() {
+            discovered.title.clone().unwrap_or_else(|| "Untitled Feed".to_string())
+        } else {
+            self.ui.add_feed_name.clone()
+        };
+
+        let url = discovered.url.clone();
+
+        // Add to config
+        self.config.feeds.push(FeedConfig {
+            name: name.clone(),
+            url: url.clone(),
+        });
+
+        // Save config
+        if let Err(e) = self.config.save() {
+            self.ui.set_error(format!("Failed to save: {e}"));
+            return;
+        }
+
+        // Add to feed manager
+        let feed_idx = self.feeds.feeds.len();
+        self.feeds.feeds.push(crate::feed::Feed::new(name.clone(), url));
+
+        // Refresh the new feed
+        self.feeds.refresh_feed(feed_idx).await;
+
+        // Update UI
+        self.rebuild_feed_list();
+        self.ui.set_status(format!("Added: {name}"));
+        self.ui.reset_add_feed();
+        self.ui.mode = super::Mode::Normal;
+    }
+
+    /// Delete the currently selected feed.
+    fn delete_selected_feed(&mut self) {
+        // Only delete if we're in the Feeds panel and have a feed selected
+        if !matches!(self.ui.panel, super::Panel::Feeds) {
+            return;
+        }
+
+        let Some(super::state::FeedListItem::Feed(feed_idx)) = 
+            self.ui.feed_list.get(self.ui.feed_list_index).copied() else {
+            return;
+        };
+
+        // Get the feed name for confirmation message
+        let feed_name = self.feeds.feeds.get(feed_idx)
+            .map(|f| f.name.clone())
+            .unwrap_or_default();
+
+        // Remove from config - check folders first, then root feeds
+        let mut found = false;
+        for folder in &mut self.config.folders {
+            if let Some(pos) = folder.feeds.iter().position(|f| {
+                self.feeds.feeds.get(feed_idx).is_some_and(|feed| feed.url == f.url)
+            }) {
+                folder.feeds.remove(pos);
+                found = true;
+                break;
+            }
+        }
+
+        if !found {
+            if let Some(pos) = self.config.feeds.iter().position(|f| {
+                self.feeds.feeds.get(feed_idx).is_some_and(|feed| feed.url == f.url)
+            }) {
+                self.config.feeds.remove(pos);
+            }
+        }
+
+        // Save config
+        if let Err(e) = self.config.save() {
+            self.ui.set_error(format!("Failed to save: {e}"));
+            return;
+        }
+
+        // Reload feed manager from config (simplest way to keep indices consistent)
+        if let Ok(new_feeds) = crate::feed::FeedManager::new(&self.config) {
+            self.feeds = new_feeds;
+        }
+
+        self.rebuild_feed_list();
+        self.select_first_feed();
+        self.ui.set_status(format!("Deleted: {feed_name}"));
     }
 
     const fn next_panel(&mut self) {

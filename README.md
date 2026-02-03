@@ -35,8 +35,9 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 | Feature | Description |
 |---------|-------------|
 | 🎨 **Beautiful TUI** | Clean three-panel interface with rounded borders and smooth navigation |
+| 🔍 **Feed Discovery** | Auto-detect RSS/Atom feeds from any URL — just paste a website |
 | 📁 **Smart Folders** | Organize feeds into collapsible folders with custom emoji icons |
-| 🔍 **Instant Search** | Find articles across all feeds with real-time filtering |
+| 🔎 **Instant Search** | Find articles across all feeds with real-time filtering |
 | 🎭 **15 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
 | 📥 **OPML Support** | Import/export subscriptions for easy migration |
 | ⚡ **Blazingly Fast** | Async feed fetching with Tokio — no UI blocking |
@@ -100,6 +101,21 @@ feedo --export backup.opml
 feedo --help
 ```
 
+### Adding Feeds
+
+Press `n` in the app to add a new feed. Just paste any URL — Feedo will auto-discover the RSS/Atom feed:
+
+```
+┌─ ➕ Add Feed ──────────────────────────────────────────┐
+│ 🔗 https://blog.rust-lang.org│                        │
+└───────────────────────────────────────────────────────┘
+```
+
+Feedo tries:
+1. The URL directly (if it's already a feed)
+2. `<link rel="alternate">` tags in HTML
+3. Common paths like `/feed`, `/rss`, `/atom.xml`
+
 ### First Run
 
 On first launch, Feedo creates a default configuration with some starter feeds:
@@ -128,6 +144,8 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 
 | Key | Action |
 |-----|--------|
+| `n` | Add new feed (with auto-discovery) |
+| `d` / `Delete` | Delete selected feed |
 | `r` | Refresh all feeds |
 | `o` | Open article in browser |
 | `Space` | Toggle read/unread |
@@ -135,6 +153,14 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `/` | Open search |
 | `t` | Open theme picker |
 | `q` / `Esc` | Quit |
+
+### Add Feed Mode
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Discover feeds / Confirm |
+| `↑` / `↓` | Select feed (if multiple found) |
+| `Esc` | Cancel / Go back |
 
 ### Search Mode
 
@@ -296,7 +322,7 @@ src/
 
 ## 🗺️ Roadmap
 
-- [ ] **Feed Discovery** — Auto-detect RSS from any URL
+- [x] **Feed Discovery** — Auto-detect RSS from any URL ✅
 - [ ] **Offline Mode** — Cache articles for reading without internet
 - [ ] **Custom Keybindings** — Vim/Emacs presets, full remapping
 - [ ] **Notifications** — Desktop alerts for new articles

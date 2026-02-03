@@ -4,10 +4,13 @@
 //! - Fetching RSS/Atom feeds from the network
 //! - Parsing feed content
 //! - Managing feed state (read/unread)
+//! - Auto-discovering feeds from URLs
 
+mod discovery;
 mod item;
 mod manager;
 mod parser;
 
+pub use discovery::{DiscoveredFeed, FeedDiscovery, FeedType};
 pub use item::FeedItem;
 pub use manager::{Feed, FeedManager, Folder};

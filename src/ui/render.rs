@@ -65,6 +65,10 @@ impl App {
             self.render_theme_picker(frame, area);
         }
 
+        if matches!(self.ui.mode, Mode::AddFeedUrl | Mode::AddFeedSelect | Mode::AddFeedName) {
+            self.render_add_feed_overlay(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -310,7 +314,7 @@ impl App {
         let status = self.ui.status.as_ref().map_or_else(
             || {
                 Span::styled(
-                    " ↑↓ navigate │ ↵ select │ / search │ r refresh │ o open │ q quit",
+                    " ↑↓ navigate │ ↵ select │ n add │ d delete │ / search │ t theme │ q quit",
                     Style::default().fg(muted),
                 )
             },
@@ -450,6 +454,142 @@ impl App {
             );
 
         frame.render_widget(theme_list, popup_area);
+    }
+
+    fn render_add_feed_overlay(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let muted = self.theme.muted();
+        let popup_area = centered_rect(60, 50, area);
+
+        frame.render_widget(Clear, popup_area);
+
+        match self.ui.mode {
+            Mode::AddFeedUrl => {
+                // URL input mode
+                let layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Length(3),  // Input field
+                        Constraint::Min(0),     // Instructions
+                    ])
+                    .split(popup_area);
+
+                let cursor = if self.ui.discovering { "⏳" } else { "│" };
+                let input = Paragraph::new(format!(" 🔗 {}{cursor}", self.ui.add_feed_url))
+                    .style(Style::default().fg(accent))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(accent))
+                            .border_type(BorderType::Rounded)
+                            .title(" ➕ Add Feed "),
+                    );
+                frame.render_widget(input, layout[0]);
+
+                let help_text = vec![
+                    "",
+                    "  Enter a URL and press Enter to discover feeds.",
+                    "",
+                    "  Examples:",
+                    "    • https://blog.rust-lang.org",
+                    "    • lobste.rs",
+                    "    • https://hnrss.org/frontpage",
+                    "",
+                    "  Feedo will auto-detect RSS/Atom feeds from any URL.",
+                ];
+                let help = Paragraph::new(help_text.join("\n"))
+                    .style(Style::default().fg(muted))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(muted))
+                            .border_type(BorderType::Rounded)
+                            .title_bottom(Line::from(" ↵ discover │ Esc cancel ").centered()),
+                    );
+                frame.render_widget(help, layout[1]);
+            }
+
+            Mode::AddFeedSelect => {
+                // Feed selection mode (multiple feeds discovered)
+                let items: Vec<ListItem> = self.ui.discovered_feeds
+                    .iter()
+                    .enumerate()
+                    .map(|(i, feed)| {
+                        let selected = i == self.ui.discovered_feed_index;
+                        let title = feed.title.as_deref().unwrap_or("Untitled");
+                        let prefix = if selected { "▸" } else { " " };
+                        
+                        let style = if selected {
+                            Style::default().fg(accent).bold()
+                        } else {
+                            Style::default()
+                        };
+
+                        ListItem::new(format!(
+                            "  {prefix} {title} ({feed_type})\n      {url}",
+                            feed_type = feed.feed_type,
+                            url = feed.url
+                        )).style(style)
+                    })
+                    .collect();
+
+                let list = List::new(items)
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(accent))
+                            .border_type(BorderType::Rounded)
+                            .title(format!(" 📡 Found {} Feeds ", self.ui.discovered_feeds.len()))
+                            .title_bottom(Line::from(" ↑↓ select │ ↵ confirm │ Esc cancel ").centered()),
+                    );
+                frame.render_widget(list, popup_area);
+            }
+
+            Mode::AddFeedName => {
+                // Name input mode
+                let layout = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([
+                        Constraint::Length(5),  // Feed info
+                        Constraint::Length(3),  // Name input
+                        Constraint::Min(0),     // Padding
+                    ])
+                    .split(popup_area);
+
+                // Show selected feed info
+                if let Some(feed) = self.ui.discovered_feeds.get(self.ui.discovered_feed_index) {
+                    let info = format!(
+                        "\n  URL: {}\n  Type: {}",
+                        feed.url, feed.feed_type
+                    );
+                    let info_widget = Paragraph::new(info)
+                        .style(Style::default().fg(muted))
+                        .block(
+                            Block::default()
+                                .borders(Borders::ALL)
+                                .border_style(Style::default().fg(muted))
+                                .border_type(BorderType::Rounded)
+                                .title(" Feed Info "),
+                        );
+                    frame.render_widget(info_widget, layout[0]);
+                }
+
+                // Name input
+                let input = Paragraph::new(format!(" 📝 {}│", self.ui.add_feed_name))
+                    .style(Style::default().fg(accent))
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_style(Style::default().fg(accent))
+                            .border_type(BorderType::Rounded)
+                            .title(" Name (optional) ")
+                            .title_bottom(Line::from(" ↵ add feed │ Esc back ").centered()),
+                    );
+                frame.render_widget(input, layout[1]);
+            }
+
+            _ => {}
+        }
     }
 }
 
