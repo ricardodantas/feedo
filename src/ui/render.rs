@@ -67,7 +67,7 @@ impl App {
 
         if matches!(
             self.ui.mode,
-            Mode::AddFeedUrl | Mode::AddFeedSelect | Mode::AddFeedName
+            Mode::AddFeedUrl | Mode::AddFeedSelect | Mode::AddFeedName | Mode::AddFeedFolder
         ) {
             self.render_add_feed_overlay(frame, area);
         }
