@@ -28,6 +28,7 @@ impl App {
             super::Mode::AddFeedSelect => self.handle_add_feed_select_key(key),
             super::Mode::AddFeedName => self.handle_add_feed_name_key(key).await,
             super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key),
+            super::Mode::ErrorDialog => self.handle_error_dialog_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -275,13 +276,18 @@ impl App {
                         }
                     }
                     Err(e) => {
-                        self.ui.set_error(format!("No feeds found: {e}"));
-                        // Stay in URL input mode
+                        self.ui.show_error_dialog(
+                            format!("No feeds found at this URL: {e}"),
+                            Some(format!("URL: {}", self.ui.add_feed_url)),
+                        );
                     }
                 }
             }
             Err(e) => {
-                self.ui.set_error(format!("Discovery error: {e}"));
+                self.ui.show_error_dialog(
+                    format!("Failed to discover feeds: {e}"),
+                    Some(format!("URL: {}", self.ui.add_feed_url)),
+                );
             }
         }
 
@@ -361,6 +367,24 @@ impl App {
             KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
                 self.ui.reset_delete();
                 self.ui.mode = super::Mode::Normal;
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Handle keys in error dialog mode.
+    fn handle_error_dialog_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                // Report bug on GitHub
+                if let Some((error, context)) = &self.ui.error_dialog {
+                    let _ = crate::error_report::open_issue(error, context.as_deref());
+                }
+                self.ui.close_error_dialog();
+            }
+            KeyCode::Esc | KeyCode::Enter | KeyCode::Char('c') | KeyCode::Char('C') => {
+                self.ui.close_error_dialog();
             }
             _ => {}
         }

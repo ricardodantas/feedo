@@ -32,6 +32,8 @@ pub enum Mode {
     AddFeedName,
     /// Confirm delete mode.
     ConfirmDelete,
+    /// Error dialog mode.
+    ErrorDialog,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -107,10 +109,14 @@ pub struct UiState {
     // --- Delete confirmation state ---
     /// Feed index pending deletion (for confirmation).
     pub pending_delete_feed: Option<usize>,
+
+    // --- Error dialog state ---
+    /// Error details for the error dialog (error message, context).
+    pub error_dialog: Option<(String, Option<String>)>,
 }
 
 impl UiState {
-    /// Set an error message.
+    /// Set an error message (status bar, transient).
     pub fn set_error(&mut self, msg: impl Into<String>) {
         self.error = Some(msg.into());
     }
@@ -128,6 +134,18 @@ impl UiState {
     /// Clear status message.
     pub fn clear_status(&mut self) {
         self.status = None;
+    }
+
+    /// Show the error dialog with details.
+    pub fn show_error_dialog(&mut self, error: impl Into<String>, context: Option<String>) {
+        self.error_dialog = Some((error.into(), context));
+        self.mode = Mode::ErrorDialog;
+    }
+
+    /// Close the error dialog.
+    pub fn close_error_dialog(&mut self) {
+        self.error_dialog = None;
+        self.mode = Mode::Normal;
     }
 
     /// Reset add feed state.

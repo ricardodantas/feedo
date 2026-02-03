@@ -73,6 +73,7 @@
 
 pub mod app;
 pub mod config;
+pub mod error_report;
 pub mod feed;
 pub mod opml;
 pub mod theme;
@@ -81,6 +82,7 @@ pub mod ui;
 // Re-export main types for convenience
 pub use app::App;
 pub use config::Config;
+pub use error_report::{create_issue_url, open_issue, REPO_URL, VERSION};
 pub use feed::{
     CacheStats, CachedFeed, CachedItem, DiscoveredFeed, Feed, FeedCache, FeedDiscovery, FeedItem,
     FeedManager, FeedType,

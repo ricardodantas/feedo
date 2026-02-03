@@ -76,6 +76,10 @@ impl App {
             self.render_delete_confirmation(frame, area);
         }
 
+        if self.ui.mode == Mode::ErrorDialog {
+            self.render_error_dialog(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -652,6 +656,80 @@ impl App {
                     .border_style(Style::default().fg(accent))
                     .title(" ⚠️  Confirm Delete ")
                     .title_style(Style::default().fg(accent).bold()),
+            );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    fn render_error_dialog(&self, frame: &mut Frame, area: Rect) {
+        let accent = self.theme.accent();
+        let muted = self.theme.muted();
+        let error_color = Color::Red;
+        let popup_area = centered_rect(70, 50, area);
+
+        frame.render_widget(Clear, popup_area);
+
+        let (error_msg, context) = self
+            .ui
+            .error_dialog
+            .as_ref()
+            .map(|(e, c)| (e.as_str(), c.as_deref()))
+            .unwrap_or(("Unknown error", None));
+
+        // Truncate error message if too long
+        let max_error_len = (popup_area.width as usize).saturating_sub(6);
+        let truncated_error: String = if error_msg.len() > max_error_len {
+            format!("{}…", &error_msg[..max_error_len.saturating_sub(1)])
+        } else {
+            error_msg.to_string()
+        };
+
+        let mut lines = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                "Oops! Something went wrong 😿",
+                Style::default().fg(error_color).bold(),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                truncated_error,
+                Style::default().fg(muted),
+            )),
+        ];
+
+        if let Some(ctx) = context {
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled(
+                format!("Context: {ctx}"),
+                Style::default().fg(muted).italic(),
+            )));
+        }
+
+        lines.extend([
+            Line::from(""),
+            Line::from(Span::styled(
+                "You can report this issue on GitHub to help us fix it.",
+                Style::default().fg(muted),
+            )),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled(" [R] ", Style::default().fg(accent).bold()),
+                Span::raw("Report on GitHub"),
+                Span::raw("    "),
+                Span::styled(" [C/Esc] ", Style::default().fg(muted)),
+                Span::raw("Close"),
+            ]),
+        ]);
+
+        let paragraph = Paragraph::new(lines)
+            .alignment(ratatui::layout::Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(error_color))
+                    .title(" ❌ Error ")
+                    .title_style(Style::default().fg(error_color).bold()),
             );
 
         frame.render_widget(paragraph, popup_area);
