@@ -3,7 +3,7 @@
 use std::path::{Path, PathBuf};
 
 use color_eyre::Result;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+use tracing_subscriber::{EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
 
 use feedo::{App, Config};
 
@@ -72,8 +72,8 @@ fn parse_args() -> Result<Command> {
 }
 
 fn print_help() {
-    let config_path = Config::config_path()
-        .map_or_else(|| "Unknown".to_string(), |p| p.display().to_string());
+    let config_path =
+        Config::config_path().map_or_else(|| "Unknown".to_string(), |p| p.display().to_string());
 
     println!(
         r"{}

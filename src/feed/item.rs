@@ -54,10 +54,11 @@ impl FeedItem {
     }
 
     /// Generate a unique ID for an item.
+    #[must_use]
     pub fn generate_id(link: Option<&str>, title: &str) -> String {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let mut hasher = DefaultHasher::new();
         if let Some(link) = link {
             link.hash(&mut hasher);
@@ -68,17 +69,17 @@ impl FeedItem {
     }
 
     /// Set the item as read.
-    pub fn mark_read(&mut self) {
+    pub const fn mark_read(&mut self) {
         self.read = true;
     }
 
     /// Set the item as unread.
-    pub fn mark_unread(&mut self) {
+    pub const fn mark_unread(&mut self) {
         self.read = false;
     }
 
     /// Toggle read state.
-    pub fn toggle_read(&mut self) {
+    pub const fn toggle_read(&mut self) {
         self.read = !self.read;
     }
 }

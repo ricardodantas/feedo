@@ -18,7 +18,8 @@ pub fn parse_feed(bytes: &[u8]) -> Result<Vec<FeedItem>> {
         .into_iter()
         .map(|entry| {
             let title = entry
-                .title.map_or_else(|| "Untitled".to_string(), |t| t.content);
+                .title
+                .map_or_else(|| "Untitled".to_string(), |t| t.content);
 
             let link = entry.links.first().map(|l| l.href.clone());
             let published = entry.published.or(entry.updated);

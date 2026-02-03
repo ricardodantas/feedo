@@ -42,8 +42,7 @@ pub enum FeedListItem {
 }
 
 /// Complete UI state.
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct UiState {
     /// Currently active panel.
     pub panel: Panel,
@@ -88,7 +87,6 @@ pub struct UiState {
     pub status: Option<String>,
 
     // --- Add Feed state ---
-    
     /// URL input for adding feed.
     pub add_feed_url: String,
 
@@ -104,7 +102,6 @@ pub struct UiState {
     /// Whether currently discovering feeds (loading state).
     pub discovering: bool,
 }
-
 
 impl UiState {
     /// Set an error message.

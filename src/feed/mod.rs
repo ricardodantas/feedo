@@ -13,7 +13,7 @@ mod item;
 mod manager;
 mod parser;
 
-pub use cache::{CachedFeed, CachedItem, CacheStats, FeedCache};
+pub use cache::{CacheStats, CachedFeed, CachedItem, FeedCache};
 pub use discovery::{DiscoveredFeed, FeedDiscovery, FeedType};
 pub use item::FeedItem;
 pub use manager::{Feed, FeedManager, Folder};

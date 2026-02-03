@@ -136,7 +136,7 @@ impl App {
 
     fn handle_theme_picker_key(&mut self, key: KeyCode) -> KeyResult {
         let themes = crate::theme::ThemeName::all();
-        
+
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
                 self.ui.mode = super::Mode::Normal;
@@ -146,14 +146,15 @@ impl App {
                 let selected_theme = themes[self.ui.theme_picker_index];
                 self.theme = crate::Theme::new(selected_theme);
                 self.config.theme = self.theme.clone();
-                
+
                 // Save config
                 if let Err(e) = self.config.save() {
                     self.ui.set_error(format!("Failed to save config: {e}"));
                 } else {
-                    self.ui.set_status(format!("Theme set to {}", selected_theme.display_name()));
+                    self.ui
+                        .set_status(format!("Theme set to {}", selected_theme.display_name()));
                 }
-                
+
                 self.ui.mode = super::Mode::Normal;
             }
             KeyCode::Char('j') | KeyCode::Down => {
@@ -212,7 +213,7 @@ impl App {
             }
             KeyCode::Char('j') | KeyCode::Down => {
                 if !self.ui.discovered_feeds.is_empty() {
-                    self.ui.discovered_feed_index = 
+                    self.ui.discovered_feed_index =
                         (self.ui.discovered_feed_index + 1) % self.ui.discovered_feeds.len();
                 }
             }
@@ -253,14 +254,14 @@ impl App {
     /// Discover feeds from the entered URL.
     async fn discover_feeds(&mut self) {
         self.ui.discovering = true;
-        
+
         match FeedDiscovery::new() {
             Ok(discovery) => {
                 match discovery.discover(&self.ui.add_feed_url).await {
                     Ok(feeds) => {
                         self.ui.discovered_feeds = feeds;
                         self.ui.discovered_feed_index = 0;
-                        
+
                         if self.ui.discovered_feeds.len() == 1 {
                             // Only one feed found, go straight to name input
                             if let Some(feed) = self.ui.discovered_feeds.first() {
@@ -282,7 +283,7 @@ impl App {
                 self.ui.set_error(format!("Discovery error: {e}"));
             }
         }
-        
+
         self.ui.discovering = false;
     }
 
@@ -294,7 +295,10 @@ impl App {
         };
 
         let name = if self.ui.add_feed_name.is_empty() {
-            discovered.title.clone().unwrap_or_else(|| "Untitled Feed".to_string())
+            discovered
+                .title
+                .clone()
+                .unwrap_or_else(|| "Untitled Feed".to_string())
         } else {
             self.ui.add_feed_name.clone()
         };
@@ -315,7 +319,9 @@ impl App {
 
         // Add to feed manager
         let feed_idx = self.feeds.feeds.len();
-        self.feeds.feeds.push(crate::feed::Feed::new(name.clone(), url));
+        self.feeds
+            .feeds
+            .push(crate::feed::Feed::new(name.clone(), url));
 
         // Refresh the new feed
         self.feeds.refresh_feed(feed_idx).await;
@@ -334,13 +340,17 @@ impl App {
             return;
         }
 
-        let Some(super::state::FeedListItem::Feed(feed_idx)) = 
-            self.ui.feed_list.get(self.ui.feed_list_index).copied() else {
+        let Some(super::state::FeedListItem::Feed(feed_idx)) =
+            self.ui.feed_list.get(self.ui.feed_list_index).copied()
+        else {
             return;
         };
 
         // Get the feed name for confirmation message
-        let feed_name = self.feeds.feeds.get(feed_idx)
+        let feed_name = self
+            .feeds
+            .feeds
+            .get(feed_idx)
             .map(|f| f.name.clone())
             .unwrap_or_default();
 
@@ -348,7 +358,10 @@ impl App {
         let mut found = false;
         for folder in &mut self.config.folders {
             if let Some(pos) = folder.feeds.iter().position(|f| {
-                self.feeds.feeds.get(feed_idx).is_some_and(|feed| feed.url == f.url)
+                self.feeds
+                    .feeds
+                    .get(feed_idx)
+                    .is_some_and(|feed| feed.url == f.url)
             }) {
                 folder.feeds.remove(pos);
                 found = true;
@@ -358,7 +371,10 @@ impl App {
 
         if !found {
             if let Some(pos) = self.config.feeds.iter().position(|f| {
-                self.feeds.feeds.get(feed_idx).is_some_and(|feed| feed.url == f.url)
+                self.feeds
+                    .feeds
+                    .get(feed_idx)
+                    .is_some_and(|feed| feed.url == f.url)
             }) {
                 self.config.feeds.remove(pos);
             }

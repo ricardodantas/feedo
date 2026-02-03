@@ -6,7 +6,11 @@ use chrono::{DateTime, Utc};
 use color_eyre::Result;
 use tracing::{debug, info, warn};
 
-use super::{cache::{CachedItem, FeedCache}, parser, FeedItem};
+use super::{
+    FeedItem,
+    cache::{CachedItem, FeedCache},
+    parser,
+};
 use crate::config::Config;
 
 /// A single feed with its items.
@@ -128,14 +132,14 @@ impl FeedManager {
             for feed_config in &folder_config.feeds {
                 let feed_idx = feeds.len();
                 let mut feed = Feed::new(feed_config.name.clone(), feed_config.url.clone());
-                
+
                 // Load cached data if available
                 if let Some(cached) = cache.get(&feed_config.url) {
                     feed.items = cached_to_items(&cached.items);
                     feed.last_updated = cached.last_fetched;
                     info!("Loaded {} cached items for {}", feed.items.len(), feed.name);
                 }
-                
+
                 feeds.push(feed);
                 folder.feed_indices.push(feed_idx);
             }
@@ -146,14 +150,14 @@ impl FeedManager {
         // Process root-level feeds
         for feed_config in &config.feeds {
             let mut feed = Feed::new(feed_config.name.clone(), feed_config.url.clone());
-            
+
             // Load cached data if available
             if let Some(cached) = cache.get(&feed_config.url) {
                 feed.items = cached_to_items(&cached.items);
                 feed.last_updated = cached.last_fetched;
                 info!("Loaded {} cached items for {}", feed.items.len(), feed.name);
             }
-            
+
             feeds.push(feed);
         }
 
@@ -170,7 +174,7 @@ impl FeedManager {
         for i in 0..self.feeds.len() {
             self.refresh_feed(i).await;
         }
-        
+
         // Save cache after refresh
         if let Err(e) = self.cache.save() {
             warn!("Failed to save cache: {e}");
@@ -189,10 +193,8 @@ impl FeedManager {
         debug!("Fetching feed: {name} ({url})");
 
         // Get current read states to preserve
-        let read_states: HashMap<String, bool> = feed.items
-            .iter()
-            .map(|i| (i.id.clone(), i.read))
-            .collect();
+        let read_states: HashMap<String, bool> =
+            feed.items.iter().map(|i| (i.id.clone(), i.read)).collect();
 
         match self.fetch_feed(&url).await {
             Ok(mut items) => {
@@ -204,16 +206,19 @@ impl FeedManager {
                 }
 
                 // Update cache
-                let cached_items: Vec<CachedItem> = items.iter().map(|i| CachedItem {
-                    id: i.id.clone(),
-                    title: i.title.clone(),
-                    link: i.link.clone(),
-                    published: i.published,
-                    summary: i.summary.clone(),
-                    read: i.read,
-                    cached_at: Utc::now(),
-                }).collect();
-                
+                let cached_items: Vec<CachedItem> = items
+                    .iter()
+                    .map(|i| CachedItem {
+                        id: i.id.clone(),
+                        title: i.title.clone(),
+                        link: i.link.clone(),
+                        published: i.published,
+                        summary: i.summary.clone(),
+                        read: i.read,
+                        cached_at: Utc::now(),
+                    })
+                    .collect();
+
                 self.cache.update_feed(&url, &name, cached_items, None);
 
                 if let Some(feed) = self.feeds.get_mut(index) {
@@ -225,10 +230,11 @@ impl FeedManager {
             }
             Err(e) => {
                 warn!("Failed to fetch {name}: {e}");
-                
+
                 // Update cache with error (keeps old items)
-                self.cache.update_feed(&url, &name, Vec::new(), Some(e.to_string()));
-                
+                self.cache
+                    .update_feed(&url, &name, Vec::new(), Some(e.to_string()));
+
                 if let Some(feed) = self.feeds.get_mut(index) {
                     feed.error = Some(e.to_string());
                     // Keep cached items on error (offline mode)
@@ -254,16 +260,14 @@ impl FeedManager {
     /// Get unread count for a folder.
     #[must_use]
     pub fn folder_unread_count(&self, folder_index: usize) -> usize {
-        self.folders
-            .get(folder_index)
-            .map_or(0, |folder| {
-                folder
-                    .feed_indices
-                    .iter()
-                    .filter_map(|&idx| self.feeds.get(idx))
-                    .map(Feed::unread_count)
-                    .sum()
-            })
+        self.folders.get(folder_index).map_or(0, |folder| {
+            folder
+                .feed_indices
+                .iter()
+                .filter_map(|&idx| self.feeds.get(idx))
+                .map(Feed::unread_count)
+                .sum()
+        })
     }
 
     /// Get total unread count.
@@ -290,19 +294,24 @@ impl FeedManager {
     pub fn save_cache(&mut self) {
         // Update all feeds in cache with current read states
         for feed in &self.feeds {
-            let cached_items: Vec<CachedItem> = feed.items.iter().map(|i| CachedItem {
-                id: i.id.clone(),
-                title: i.title.clone(),
-                link: i.link.clone(),
-                published: i.published,
-                summary: i.summary.clone(),
-                read: i.read,
-                cached_at: Utc::now(),
-            }).collect();
-            
-            self.cache.update_feed(&feed.url, &feed.name, cached_items, feed.error.clone());
+            let cached_items: Vec<CachedItem> = feed
+                .items
+                .iter()
+                .map(|i| CachedItem {
+                    id: i.id.clone(),
+                    title: i.title.clone(),
+                    link: i.link.clone(),
+                    published: i.published,
+                    summary: i.summary.clone(),
+                    read: i.read,
+                    cached_at: Utc::now(),
+                })
+                .collect();
+
+            self.cache
+                .update_feed(&feed.url, &feed.name, cached_items, feed.error.clone());
         }
-        
+
         if let Err(e) = self.cache.save() {
             warn!("Failed to save cache: {e}");
         }
@@ -317,12 +326,15 @@ impl FeedManager {
 
 /// Convert cached items to feed items.
 fn cached_to_items(cached: &[CachedItem]) -> Vec<FeedItem> {
-    cached.iter().map(|c| FeedItem {
-        id: c.id.clone(),
-        title: c.title.clone(),
-        link: c.link.clone(),
-        published: c.published,
-        summary: c.summary.clone(),
-        read: c.read,
-    }).collect()
+    cached
+        .iter()
+        .map(|c| FeedItem {
+            id: c.id.clone(),
+            title: c.title.clone(),
+            link: c.link.clone(),
+            published: c.published,
+            summary: c.summary.clone(),
+            read: c.read,
+        })
+        .collect()
 }

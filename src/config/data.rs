@@ -1,10 +1,6 @@
 //! Configuration data structures.
 
-use std::{
-    env,
-    fs,
-    path::PathBuf,
-};
+use std::{env, fs, path::PathBuf};
 
 use color_eyre::Result;
 use serde::{Deserialize, Serialize};
@@ -105,7 +101,7 @@ impl Default for Config {
 
 impl Config {
     /// Get the configuration directory path.
-    /// 
+    ///
     /// Uses `~/.config/feedo` on all platforms for consistency.
     /// Falls back to platform-specific directories if HOME is not set.
     #[must_use]

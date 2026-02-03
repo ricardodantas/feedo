@@ -8,7 +8,7 @@ use color_eyre::Result;
 use crossterm::{
     event::{self, Event, KeyEventKind},
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::prelude::*;
 use tracing::info;
@@ -46,7 +46,7 @@ impl App {
 
         // Check if we have cached data (offline mode)
         let has_cached = feeds.feeds.iter().any(|f| !f.items.is_empty());
-        
+
         if has_cached {
             info!("Loaded cached articles for offline reading");
         }
@@ -94,7 +94,10 @@ impl App {
         result
     }
 
-    async fn main_loop(&mut self, terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> Result<()> {
+    async fn main_loop(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    ) -> Result<()> {
         loop {
             // Render
             terminal.draw(|frame| self.render(frame))?;

@@ -5,7 +5,7 @@
 //! - Validate that a URL is a valid RSS/Atom feed
 //! - Extract feed metadata (title, description)
 
-use color_eyre::{eyre::eyre, Result};
+use color_eyre::{Result, eyre::eyre};
 use regex_lite::Regex;
 use tracing::debug;
 
@@ -98,8 +98,8 @@ impl FeedDiscovery {
 
         if content_type.contains("text/html") {
             let html = response.text().await?;
-            let discovered = self.extract_feed_links(&html, &url);
-            
+            let discovered = Self::extract_feed_links(&html, &url);
+
             // Validate each discovered URL
             for feed_url in discovered {
                 if let Ok(feed) = self.try_as_feed(&feed_url).await {
@@ -145,7 +145,7 @@ impl FeedDiscovery {
     /// Try to parse a URL as a feed directly.
     async fn try_as_feed(&self, url: &str) -> Result<DiscoveredFeed> {
         let response = self.client.get(url).send().await?;
-        
+
         if !response.status().is_success() {
             return Err(eyre!("HTTP {}", response.status()));
         }
@@ -158,15 +158,23 @@ impl FeedDiscovery {
             .to_string();
 
         let bytes = response.bytes().await?;
-        
+
         // Try to parse as feed
         let feed = feed_rs::parser::parse(&bytes[..])?;
 
         let feed_type = if content_type.contains("json") {
             FeedType::Json
-        } else if content_type.contains("atom") || feed.feed_type == feed_rs::model::FeedType::Atom {
+        } else if content_type.contains("atom") || feed.feed_type == feed_rs::model::FeedType::Atom
+        {
             FeedType::Atom
-        } else if content_type.contains("rss") || matches!(feed.feed_type, feed_rs::model::FeedType::RSS0 | feed_rs::model::FeedType::RSS1 | feed_rs::model::FeedType::RSS2) {
+        } else if content_type.contains("rss")
+            || matches!(
+                feed.feed_type,
+                feed_rs::model::FeedType::RSS0
+                    | feed_rs::model::FeedType::RSS1
+                    | feed_rs::model::FeedType::RSS2
+            )
+        {
             FeedType::Rss
         } else {
             FeedType::Unknown
@@ -180,22 +188,22 @@ impl FeedDiscovery {
     }
 
     /// Extract feed links from HTML.
-    fn extract_feed_links(&self, html: &str, base_url: &str) -> Vec<String> {
+    fn extract_feed_links(html: &str, base_url: &str) -> Vec<String> {
         let mut feeds = Vec::new();
         let base = extract_base_url(base_url);
 
         // Pattern to match <link> tags with feed types
         // This is simplified for regex-lite compatibility
-        let link_pattern = Regex::new(r#"<link[^>]*>"#).unwrap();
-        
+        let link_pattern = Regex::new(r"<link[^>]*>").unwrap();
+
         for cap in link_pattern.find_iter(html) {
             let tag = cap.as_str();
-            
+
             // Check if it's a feed link
             let is_feed = tag.contains("application/rss+xml")
                 || tag.contains("application/atom+xml")
                 || tag.contains("application/feed+json");
-            
+
             if is_feed {
                 // Extract href
                 if let Some(href) = extract_href(tag) {
@@ -212,12 +220,17 @@ impl FeedDiscovery {
         for cap in a_pattern.captures_iter(html) {
             if let Some(href) = cap.get(1) {
                 let href_str = href.as_str().to_lowercase();
-                if href_str.contains("rss") || href_str.contains("feed") || href_str.contains("atom") {
-                    if href_str.ends_with(".xml") || href_str.ends_with("/rss") || href_str.ends_with("/feed") {
-                        let full_url = resolve_url(href.as_str(), &base);
-                        if !feeds.contains(&full_url) {
-                            feeds.push(full_url);
-                        }
+                let looks_like_feed = href_str.contains("rss")
+                    || href_str.contains("feed")
+                    || href_str.contains("atom");
+                let has_feed_extension = href_str.ends_with("/rss")
+                    || href_str.ends_with("/feed")
+                    || href_str.to_lowercase().ends_with(".xml");
+
+                if looks_like_feed && has_feed_extension {
+                    let full_url = resolve_url(href.as_str(), &base);
+                    if !feeds.contains(&full_url) {
+                        feeds.push(full_url);
                     }
                 }
             }
@@ -249,16 +262,16 @@ fn extract_href(tag: &str) -> Option<String> {
 /// Normalize a URL (add https:// if missing, etc.)
 fn normalize_url(url: &str) -> Result<String> {
     let url = url.trim();
-    
+
     if url.is_empty() {
         return Err(eyre!("URL is empty"));
     }
 
     // Add https:// if no protocol
-    let url = if !url.contains("://") {
-        format!("https://{url}")
-    } else {
+    let url = if url.contains("://") {
         url.to_string()
+    } else {
+        format!("https://{url}")
     };
 
     // Validate URL
@@ -269,11 +282,10 @@ fn normalize_url(url: &str) -> Result<String> {
 
 /// Extract the base URL (scheme + host) from a full URL.
 fn extract_base_url(url: &str) -> String {
-    if let Ok(parsed) = reqwest::Url::parse(url) {
-        format!("{}://{}", parsed.scheme(), parsed.host_str().unwrap_or(""))
-    } else {
-        url.to_string()
-    }
+    reqwest::Url::parse(url).map_or_else(
+        |_| url.to_string(),
+        |parsed| format!("{}://{}", parsed.scheme(), parsed.host_str().unwrap_or("")),
+    )
 }
 
 /// Resolve a potentially relative URL against a base.
@@ -296,28 +308,51 @@ mod tests {
     #[test]
     fn test_normalize_url() {
         assert_eq!(normalize_url("example.com").unwrap(), "https://example.com");
-        assert_eq!(normalize_url("https://example.com").unwrap(), "https://example.com");
-        assert_eq!(normalize_url("http://example.com").unwrap(), "http://example.com");
+        assert_eq!(
+            normalize_url("https://example.com").unwrap(),
+            "https://example.com"
+        );
+        assert_eq!(
+            normalize_url("http://example.com").unwrap(),
+            "http://example.com"
+        );
     }
 
     #[test]
     fn test_extract_base_url() {
-        assert_eq!(extract_base_url("https://example.com/path/to/page"), "https://example.com");
-        assert_eq!(extract_base_url("http://blog.example.com/feed"), "http://blog.example.com");
+        assert_eq!(
+            extract_base_url("https://example.com/path/to/page"),
+            "https://example.com"
+        );
+        assert_eq!(
+            extract_base_url("http://blog.example.com/feed"),
+            "http://blog.example.com"
+        );
     }
 
     #[test]
     fn test_resolve_url() {
         let base = "https://example.com";
         assert_eq!(resolve_url("/feed", base), "https://example.com/feed");
-        assert_eq!(resolve_url("//cdn.example.com/feed", base), "https://cdn.example.com/feed");
-        assert_eq!(resolve_url("https://other.com/feed", base), "https://other.com/feed");
+        assert_eq!(
+            resolve_url("//cdn.example.com/feed", base),
+            "https://cdn.example.com/feed"
+        );
+        assert_eq!(
+            resolve_url("https://other.com/feed", base),
+            "https://other.com/feed"
+        );
     }
 
     #[test]
     fn test_extract_href() {
-        assert_eq!(extract_href(r#"<link href="https://example.com/feed" rel="alternate">"#), Some("https://example.com/feed".to_string()));
-        assert_eq!(extract_href(r#"<link href='/rss.xml' type='application/rss+xml'>"#), Some("/rss.xml".to_string()));
+        assert_eq!(
+            extract_href(r#"<link href="https://example.com/feed" rel="alternate">"#),
+            Some("https://example.com/feed".to_string())
+        );
+        assert_eq!(
+            extract_href(r#"<link href='/rss.xml' type='application/rss+xml'>"#),
+            Some("/rss.xml".to_string())
+        );
     }
 }
-

@@ -7,8 +7,8 @@ use std::{fs, path::Path};
 
 use color_eyre::Result;
 use quick_xml::{
-    events::{BytesStart, Event},
     Reader,
+    events::{BytesStart, Event},
 };
 
 use crate::config::{Config, FeedConfig, FolderConfig};
@@ -68,7 +68,7 @@ pub fn import(path: &Path, config: &mut Config) -> Result<usize> {
 /// Returns an error if the file cannot be written.
 pub fn export(config: &Config, path: &Path) -> Result<()> {
     use std::fmt::Write;
-    
+
     let mut xml = String::from(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">

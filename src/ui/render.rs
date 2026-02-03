@@ -2,12 +2,12 @@
 
 use ratatui::{
     prelude::*,
-    widgets::{Paragraph, ListItem, List, Block, Borders, BorderType, Wrap, Clear},
+    widgets::{Block, BorderType, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 
-use crate::app::App;
-use super::{Mode, Panel};
 use super::state::FeedListItem;
+use super::{Mode, Panel};
+use crate::app::App;
 
 /// Modern ASCII art logo for Feedo - a cute RSS-eating dog.
 pub const LOGO: &str = r"
@@ -46,9 +46,9 @@ impl App {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(1),  // Title bar
-                Constraint::Min(0),     // Content
-                Constraint::Length(1),  // Status bar
+                Constraint::Length(1), // Title bar
+                Constraint::Min(0),    // Content
+                Constraint::Length(1), // Status bar
             ])
             .split(area);
 
@@ -65,7 +65,10 @@ impl App {
             self.render_theme_picker(frame, area);
         }
 
-        if matches!(self.ui.mode, Mode::AddFeedUrl | Mode::AddFeedSelect | Mode::AddFeedName) {
+        if matches!(
+            self.ui.mode,
+            Mode::AddFeedUrl | Mode::AddFeedSelect | Mode::AddFeedName
+        ) {
             self.render_add_feed_overlay(frame, area);
         }
 
@@ -82,11 +85,12 @@ impl App {
             format!(" {LOGO_COMPACT}")
         };
 
-        let bar = Paragraph::new(title)
-            .style(Style::default()
+        let bar = Paragraph::new(title).style(
+            Style::default()
                 .fg(self.theme.accent())
-                .add_modifier(Modifier::BOLD));
-        
+                .add_modifier(Modifier::BOLD),
+        );
+
         frame.render_widget(bar, area);
     }
 
@@ -157,9 +161,12 @@ impl App {
                     FeedListItem::Feed(idx) => {
                         let feed = &self.feeds.feeds[*idx];
                         let unread = feed.unread_count();
-                        
+
                         // Check if feed is in a folder (indented)
-                        let in_folder = self.feeds.folders.iter()
+                        let in_folder = self
+                            .feeds
+                            .folders
+                            .iter()
                             .any(|f| f.feed_indices.contains(idx));
                         let indent = if in_folder { "    " } else { "" };
 
@@ -258,7 +265,7 @@ impl App {
 
     fn render_content_panel(&self, frame: &mut Frame, area: Rect) {
         use std::fmt::Write;
-        
+
         let is_active = self.ui.panel == Panel::Content;
         let accent = self.theme.accent();
         let muted = self.theme.muted();
@@ -401,7 +408,7 @@ impl App {
 
     fn render_theme_picker(&self, frame: &mut Frame, area: Rect) {
         use crate::theme::ThemeName;
-        
+
         let popup_area = centered_rect(50, 70, area);
         frame.render_widget(Clear, popup_area);
 
@@ -412,14 +419,14 @@ impl App {
             .map(|(i, theme)| {
                 let palette = theme.palette();
                 let selected = i == self.ui.theme_picker_index;
-                
+
                 // Create color preview squares
                 let preview = format!(
                     "  {} {} ",
                     if selected { "▸" } else { " " },
                     theme.display_name()
                 );
-                
+
                 let style = if selected {
                     Style::default()
                         .fg(palette.accent)
@@ -440,22 +447,23 @@ impl App {
             .collect();
 
         let accent = self.theme.accent();
-        let theme_list = List::new(items)
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_style(Style::default().fg(accent))
-                    .border_type(BorderType::Rounded)
-                    .title(format!(" 🎨 Select Theme ({}/{}) ", 
-                        self.ui.theme_picker_index + 1, 
-                        themes.len()
-                    ))
-                    .title_bottom(Line::from(" ↑↓ navigate │ ↵ apply │ Esc cancel ").centered()),
-            );
+        let theme_list = List::new(items).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(accent))
+                .border_type(BorderType::Rounded)
+                .title(format!(
+                    " 🎨 Select Theme ({}/{}) ",
+                    self.ui.theme_picker_index + 1,
+                    themes.len()
+                ))
+                .title_bottom(Line::from(" ↑↓ navigate │ ↵ apply │ Esc cancel ").centered()),
+        );
 
         frame.render_widget(theme_list, popup_area);
     }
 
+    #[allow(clippy::too_many_lines)]
     fn render_add_feed_overlay(&self, frame: &mut Frame, area: Rect) {
         let accent = self.theme.accent();
         let muted = self.theme.muted();
@@ -469,8 +477,8 @@ impl App {
                 let layout = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
-                        Constraint::Length(3),  // Input field
-                        Constraint::Min(0),     // Instructions
+                        Constraint::Length(3), // Input field
+                        Constraint::Min(0),    // Instructions
                     ])
                     .split(popup_area);
 
@@ -511,14 +519,16 @@ impl App {
 
             Mode::AddFeedSelect => {
                 // Feed selection mode (multiple feeds discovered)
-                let items: Vec<ListItem> = self.ui.discovered_feeds
+                let items: Vec<ListItem> = self
+                    .ui
+                    .discovered_feeds
                     .iter()
                     .enumerate()
                     .map(|(i, feed)| {
                         let selected = i == self.ui.discovered_feed_index;
                         let title = feed.title.as_deref().unwrap_or("Untitled");
                         let prefix = if selected { "▸" } else { " " };
-                        
+
                         let style = if selected {
                             Style::default().fg(accent).bold()
                         } else {
@@ -529,19 +539,24 @@ impl App {
                             "  {prefix} {title} ({feed_type})\n      {url}",
                             feed_type = feed.feed_type,
                             url = feed.url
-                        )).style(style)
+                        ))
+                        .style(style)
                     })
                     .collect();
 
-                let list = List::new(items)
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .border_style(Style::default().fg(accent))
-                            .border_type(BorderType::Rounded)
-                            .title(format!(" 📡 Found {} Feeds ", self.ui.discovered_feeds.len()))
-                            .title_bottom(Line::from(" ↑↓ select │ ↵ confirm │ Esc cancel ").centered()),
-                    );
+                let list = List::new(items).block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(Style::default().fg(accent))
+                        .border_type(BorderType::Rounded)
+                        .title(format!(
+                            " 📡 Found {} Feeds ",
+                            self.ui.discovered_feeds.len()
+                        ))
+                        .title_bottom(
+                            Line::from(" ↑↓ select │ ↵ confirm │ Esc cancel ").centered(),
+                        ),
+                );
                 frame.render_widget(list, popup_area);
             }
 
@@ -550,18 +565,15 @@ impl App {
                 let layout = Layout::default()
                     .direction(Direction::Vertical)
                     .constraints([
-                        Constraint::Length(5),  // Feed info
-                        Constraint::Length(3),  // Name input
-                        Constraint::Min(0),     // Padding
+                        Constraint::Length(5), // Feed info
+                        Constraint::Length(3), // Name input
+                        Constraint::Min(0),    // Padding
                     ])
                     .split(popup_area);
 
                 // Show selected feed info
                 if let Some(feed) = self.ui.discovered_feeds.get(self.ui.discovered_feed_index) {
-                    let info = format!(
-                        "\n  URL: {}\n  Type: {}",
-                        feed.url, feed.feed_type
-                    );
+                    let info = format!("\n  URL: {}\n  Type: {}", feed.url, feed.feed_type);
                     let info_widget = Paragraph::new(info)
                         .style(Style::default().fg(muted))
                         .block(
