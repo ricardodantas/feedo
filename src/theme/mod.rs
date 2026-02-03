@@ -7,14 +7,22 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum AccentColor {
+    /// Cyan — clean and modern (default).
     #[default]
     Cyan,
+    /// Blue — classic and calm.
     Blue,
+    /// Green — nature vibes.
     Green,
+    /// Yellow — warm and sunny.
     Yellow,
+    /// Magenta — purple dreams.
     Magenta,
+    /// Red — bold and bright.
     Red,
+    /// Orange — energetic.
     Orange,
+    /// Pink — soft and playful.
     Pink,
 }
 

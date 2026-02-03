@@ -9,21 +9,36 @@ use crate::app::App;
 use super::{Mode, Panel};
 use super::state::FeedListItem;
 
-/// ASCII art logo for Feedo.
+/// Modern ASCII art logo for Feedo - a cute RSS-eating dog.
 pub const LOGO: &str = r#"
-    ╭─────────────────────────────────────╮
-    │                                     │
-    │   ┏━╸┏━╸┏━╸╺┳┓┏━┓   🐕              │
-    │   ┣╸ ┣╸ ┣╸  ┃┃┃ ┃                   │
-    │   ╹  ╹  ┗━╸╺┻┛┗━┛                   │
-    │                                     │
-    │   Your terminal RSS reader          │
-    │                                     │
-    ╰─────────────────────────────────────╯
+                    ╭──────────────────────────────────────────╮
+                    │                                          │
+                    │      ██████╗██████╗██████╗██████╗  ██████╗│
+                    │      ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗
+                    │      █████╗ █████╗ █████╗ ██║  ██║██║   ██║
+                    │      ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║
+                    │      ██║    ██████╗██████╗██████╔╝╚██████╔╝
+                    │      ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝ 
+                    │                                          │
+                    │           ∩＿∩                            │
+                    │          (◕ᴥ◕)  ♪ nom nom RSS ♪          │
+                    │         ⊂(　 )つ                          │
+                    │          /　　\                           │
+                    │         (_/￣＼_)                          │
+                    │                                          │
+                    │      Your terminal RSS companion 🦴       │
+                    │                                          │
+                    ╰──────────────────────────────────────────╯
 "#;
 
 /// Compact logo for the title bar.
-pub const LOGO_COMPACT: &str = "🐕 feedo";
+pub const LOGO_COMPACT: &str = "◉ feedo";
+
+/// Minimal dog icon.
+pub const DOG_ICON: &str = "(◕ᴥ◕)";
+
+/// Loading animation frames.
+pub const LOADING_FRAMES: &[&str] = &["◐", "◓", "◑", "◒"];
 
 impl App {
     /// Render the entire UI.
@@ -57,7 +72,7 @@ impl App {
     fn render_title_bar(&self, frame: &mut Frame, area: Rect) {
         let unread = self.feeds.total_unread_count();
         let title = if unread > 0 {
-            format!(" {} ({} unread)", LOGO_COMPACT, unread)
+            format!(" {} │ {} unread", LOGO_COMPACT, unread)
         } else {
             format!(" {}", LOGO_COMPACT)
         };
@@ -146,7 +161,7 @@ impl App {
                         let text = if unread > 0 {
                             format!("{indent}● {} ({unread})", feed.name)
                         } else {
-                            format!("{indent}  {}", feed.name)
+                            format!("{indent}○ {}", feed.name)
                         };
 
                         let style = if is_selected {
@@ -173,7 +188,8 @@ impl App {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(border_style)
-                .title(" Feeds "),
+                .border_type(BorderType::Rounded)
+                .title(" 📡 Feeds "),
         );
 
         frame.render_widget(list, area);
@@ -190,7 +206,7 @@ impl App {
             .enumerate()
             .map(|(i, item)| {
                 let is_selected = i == self.ui.selected_item;
-                let prefix = if item.read { "  " } else { "● " };
+                let prefix = if item.read { "○" } else { "●" };
 
                 let style = if is_selected {
                     Style::default().fg(accent).bold()
@@ -208,7 +224,7 @@ impl App {
                     item.title.clone()
                 };
 
-                ListItem::new(format!("{prefix}{title}")).style(style)
+                ListItem::new(format!(" {prefix} {title}")).style(style)
             })
             .collect();
 
@@ -228,7 +244,8 @@ impl App {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(border_style)
-                .title(format!(" {title} ")),
+                .border_type(BorderType::Rounded)
+                .title(format!(" 📰 {title} ")),
         );
 
         frame.render_widget(list, area);
@@ -240,25 +257,26 @@ impl App {
         let muted = self.theme.muted();
 
         let content = if let Some(item) = self.selected_item() {
-            let mut text = format!("📰 {}\n\n", item.title);
+            let mut text = format!("  {}\n\n", item.title);
 
             if let Some(date) = item.published {
-                text.push_str(&format!("📅 {}\n\n", date.format("%Y-%m-%d %H:%M")));
+                text.push_str(&format!("  📅 {}\n\n", date.format("%Y-%m-%d %H:%M")));
             }
 
             if let Some(summary) = &item.summary {
                 // Strip HTML tags
                 let clean = strip_html(summary);
-                text.push_str(&clean);
+                text.push_str("  ");
+                text.push_str(&clean.replace('\n', "\n  "));
             }
 
             if let Some(link) = &item.link {
-                text.push_str(&format!("\n\n🔗 {link}"));
+                text.push_str(&format!("\n\n  🔗 {link}"));
             }
 
             text
         } else {
-            "No article selected".to_string()
+            format!("\n\n    {DOG_ICON}\n\n    Select an article to read")
         };
 
         let border_style = if is_active {
@@ -272,9 +290,10 @@ impl App {
                 Block::default()
                     .borders(Borders::ALL)
                     .border_style(border_style)
-                    .title(" Content "),
+                    .border_type(BorderType::Rounded)
+                    .title(" 📖 Content "),
             )
-            .wrap(Wrap { trim: true })
+            .wrap(Wrap { trim: false })
             .scroll((self.ui.scroll_offset, 0));
 
         frame.render_widget(paragraph, area);
@@ -282,14 +301,18 @@ impl App {
 
     fn render_status_bar(&self, frame: &mut Frame, area: Rect) {
         let muted = self.theme.muted();
+        let accent = self.theme.accent();
 
         let status = if let Some(msg) = &self.ui.status {
-            msg.clone()
+            Span::styled(format!(" {DOG_ICON} {msg}"), Style::default().fg(accent))
         } else {
-            " j/k:nav │ /:search │ r:refresh │ o:open │ Space:read │ q:quit".to_string()
+            Span::styled(
+                " ↑↓ navigate │ ↵ select │ / search │ r refresh │ o open │ q quit",
+                Style::default().fg(muted),
+            )
         };
 
-        let bar = Paragraph::new(status).style(Style::default().fg(muted));
+        let bar = Paragraph::new(Line::from(status));
         frame.render_widget(bar, area);
     }
 
@@ -305,12 +328,13 @@ impl App {
             .split(popup_area);
 
         // Search input
-        let input = Paragraph::new(format!("/{}", self.ui.search_query))
+        let input = Paragraph::new(format!(" 🔍 {}", self.ui.search_query))
             .style(Style::default().fg(accent))
             .block(
                 Block::default()
                     .borders(Borders::ALL)
                     .border_style(Style::default().fg(accent))
+                    .border_type(BorderType::Rounded)
                     .title(" Search "),
             );
         frame.render_widget(input, layout[0]);
@@ -325,7 +349,7 @@ impl App {
             .map(|(i, (feed_idx, item_idx))| {
                 let feed = &self.feeds.feeds[*feed_idx];
                 let item = &feed.items[*item_idx];
-                let text = format!("[{}] {}", feed.name, item.title);
+                let text = format!("  [{feed}] {title}", feed = feed.name, title = item.title);
 
                 let style = if i == self.ui.search_selected {
                     Style::default().fg(accent).bold()
@@ -342,6 +366,7 @@ impl App {
             Block::default()
                 .borders(Borders::ALL)
                 .border_style(Style::default().fg(accent))
+                .border_type(BorderType::Rounded)
                 .title(results_title),
         );
         frame.render_widget(results_list, layout[1]);
@@ -351,12 +376,13 @@ impl App {
         let popup_area = centered_rect(60, 20, area);
         frame.render_widget(Clear, popup_area);
 
-        let error_block = Paragraph::new(error)
+        let error_block = Paragraph::new(format!("\n  ⚠️  {error}"))
             .style(Style::default().fg(self.theme.error()))
             .block(
                 Block::default()
                     .borders(Borders::ALL)
                     .border_style(Style::default().fg(self.theme.error()))
+                    .border_type(BorderType::Rounded)
                     .title(" Error "),
             )
             .wrap(Wrap { trim: true });
@@ -393,7 +419,12 @@ fn strip_html(s: &str) -> String {
         .replace("</p>", "\n")
         .replace("<br>", "\n")
         .replace("<br/>", "\n")
-        .replace("<br />", "\n");
+        .replace("<br />", "\n")
+        .replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"");
 
     regex_lite::Regex::new(r"<[^>]+>")
         .map(|re| re.replace_all(&clean, "").to_string())

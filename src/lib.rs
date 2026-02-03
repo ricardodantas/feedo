@@ -2,24 +2,74 @@
 //!
 //! A stunning terminal RSS reader built with Rust.
 //!
+//! ## Overview
+//!
+//! Feedo is a modern, fast, and beautiful terminal-based RSS/Atom feed reader.
+//! It provides a three-panel interface inspired by desktop readers like Reeder,
+//! but designed for the command line.
+//!
 //! ## Architecture
 //!
 //! ```text
 //! ┌─────────────────────────────────────────────────────────────┐
-//! │                        main.rs                               │
-//! │                    (entry point, CLI)                        │
-//! └─────────────────────────┬───────────────────────────────────┘
-//!                           │
-//! ┌─────────────────────────▼───────────────────────────────────┐
-//! │                        App                                   │
-//! │              (orchestrates everything)                       │
-//! └──────┬──────────────┬──────────────┬──────────────┬─────────┘
-//!        │              │              │              │
-//! ┌──────▼─────┐ ┌──────▼─────┐ ┌──────▼─────┐ ┌──────▼─────┐
-//! │   Config   │ │   Feed     │ │    UI      │ │   OPML     │
-//! │  (storage) │ │ (fetching) │ │ (rendering)│ │  (import)  │
-//! └────────────┘ └────────────┘ └────────────┘ └────────────┘
+//! │                          App                                │
+//! │  Orchestrates all components and runs the main event loop   │
+//! └─────────────────────────────────────────────────────────────┘
+//!                              │
+//!          ┌───────────────────┼───────────────────┐
+//!          ▼                   ▼                   ▼
+//! ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+//! │     Config      │ │  FeedManager    │ │       UI        │
+//! │                 │ │                 │ │                 │
+//! │ • Load/Save     │ │ • Fetch feeds   │ │ • Render panels │
+//! │ • Folders       │ │ • Parse RSS     │ │ • Handle input  │
+//! │ • Theme         │ │ • Track state   │ │ • Search        │
+//! └─────────────────┘ └─────────────────┘ └─────────────────┘
+//!          │                   │                   │
+//!          └───────────────────┴───────────────────┘
+//!                              │
+//!                    ┌─────────────────┐
+//!                    │      OPML       │
+//!                    │                 │
+//!                    │ • Import feeds  │
+//!                    │ • Export feeds  │
+//!                    └─────────────────┘
 //! ```
+//!
+//! ## Modules
+//!
+//! - [`app`] — Main application state and event loop
+//! - [`config`] — Configuration management and persistence
+//! - [`feed`] — Feed fetching, parsing, and state management
+//! - [`opml`] — OPML import/export for feed migration
+//! - [`theme`] — UI theming and color configuration
+//! - [`ui`] — Terminal UI rendering and input handling
+//!
+//! ## Example
+//!
+//! ```no_run
+//! use feedo::App;
+//!
+//! #[tokio::main]
+//! async fn main() -> color_eyre::Result<()> {
+//!     let mut app = App::new().await?;
+//!     app.run().await
+//! }
+//! ```
+//!
+//! ## Features
+//!
+//! - **Beautiful TUI** — Clean three-panel interface with ratatui
+//! - **Folder Organization** — Group feeds with custom emoji icons
+//! - **Instant Search** — Find articles across all feeds
+//! - **Themeable** — 8 accent colors to choose from
+//! - **OPML Support** — Import/export for easy migration
+//! - **Async** — Non-blocking feed fetching with Tokio
+//! - **Cross-Platform** — Works on Linux, macOS, and Windows
+
+#![doc(html_root_url = "https://docs.rs/feedo/0.1.0")]
+#![warn(missing_docs)]
+#![warn(rustdoc::missing_crate_level_docs)]
 
 pub mod app;
 pub mod config;
@@ -28,5 +78,8 @@ pub mod opml;
 pub mod theme;
 pub mod ui;
 
+// Re-export main types for convenience
 pub use app::App;
 pub use config::Config;
+pub use feed::{Feed, FeedItem, FeedManager};
+pub use theme::Theme;

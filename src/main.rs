@@ -73,10 +73,9 @@ fn parse_args() -> Result<Command> {
 
 fn print_help() {
     println!(
-        r#"
-{}
+        r#"{}
 
-A stunning terminal RSS reader 🐕
+A stunning terminal RSS reader — your news, your way.
 
 USAGE:
     feedo [OPTIONS]
@@ -88,31 +87,49 @@ OPTIONS:
     -v, --version          Show version information
 
 KEYBINDINGS:
-    j/↓         Move down
-    k/↑         Move up
-    l/→/Enter   Select / Enter
-    h/←         Go back
-    Tab         Switch panel
-    /           Search
-    r           Refresh feeds
-    o           Open in browser
-    Space       Toggle read/unread
-    a           Mark all read
-    g/G         Jump to top/bottom
-    q/Esc       Quit
+    Navigation
+      j / ↓           Move down
+      k / ↑           Move up  
+      l / → / Enter   Select / Enter
+      h / ←           Go back
+      g / G           Jump to top / bottom
+      Tab             Switch panel
+
+    Actions  
+      r               Refresh all feeds
+      o               Open article in browser
+      Space           Toggle read / unread
+      a               Mark all as read
+      /               Search across all feeds
+      q / Esc         Quit
 
 CONFIG:
-    {}
+    {config}
+
+HOMEPAGE:
+    https://github.com/ricardodantas/feedo
 "#,
         feedo::ui::LOGO,
-        Config::config_path()
+        config = Config::config_path()
             .map(|p| p.display().to_string())
             .unwrap_or_else(|| "Unknown".to_string())
     );
 }
 
 fn print_version() {
-    println!("feedo {}", env!("CARGO_PKG_VERSION"));
+    println!(
+        r#"
+      ██████╗██████╗██████╗██████╗  ██████╗
+      ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗
+      █████╗ █████╗ █████╗ ██║  ██║██║   ██║
+      ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║
+      ██║    ██████╗██████╗██████╔╝╚██████╔╝
+      ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝ 
+                        
+      v{}  (◕ᴥ◕)
+"#,
+        env!("CARGO_PKG_VERSION")
+    );
 }
 
 async fn run_tui() -> Result<()> {
@@ -124,13 +141,13 @@ async fn import_opml(path: &PathBuf) -> Result<()> {
     let mut config = Config::load()?;
     let count = feedo::opml::import(path, &mut config)?;
     config.save()?;
-    println!("✅ Imported {count} feeds from {}", path.display());
+    println!("(◕ᴥ◕) Imported {count} feeds from {}", path.display());
     Ok(())
 }
 
 fn export_opml(path: &PathBuf) -> Result<()> {
     let config = Config::load()?;
     feedo::opml::export(&config, path)?;
-    println!("✅ Exported feeds to {}", path.display());
+    println!("(◕ᴥ◕) Exported feeds to {}", path.display());
     Ok(())
 }

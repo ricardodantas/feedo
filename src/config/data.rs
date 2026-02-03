@@ -1,9 +1,12 @@
 //! Configuration data structures.
 
-use std::{fs, path::PathBuf};
+use std::{
+    env,
+    fs,
+    path::PathBuf,
+};
 
 use color_eyre::Result;
-use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 
 use crate::theme::Theme;
@@ -22,6 +25,10 @@ pub struct Config {
     /// UI theme settings.
     #[serde(default)]
     pub theme: Theme,
+
+    /// Refresh interval in minutes (0 = manual only).
+    #[serde(default = "default_refresh_interval")]
+    pub refresh_interval: u32,
 }
 
 /// A folder containing multiple feeds.
@@ -56,6 +63,10 @@ const fn default_true() -> bool {
     true
 }
 
+const fn default_refresh_interval() -> u32 {
+    30 // 30 minutes
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -87,21 +98,41 @@ impl Default for Config {
             ],
             feeds: vec![],
             theme: Theme::default(),
+            refresh_interval: default_refresh_interval(),
         }
     }
 }
 
 impl Config {
     /// Get the configuration directory path.
+    /// 
+    /// Uses `~/.config/feedo` on all platforms for consistency.
+    /// Falls back to platform-specific directories if HOME is not set.
     #[must_use]
     pub fn config_dir() -> Option<PathBuf> {
-        ProjectDirs::from("com", "feedo", "feedo").map(|dirs| dirs.config_dir().to_path_buf())
+        // Prefer ~/.config/feedo on all platforms (XDG-style)
+        if let Ok(home) = env::var("HOME") {
+            return Some(PathBuf::from(home).join(".config").join("feedo"));
+        }
+
+        // Fallback for Windows if HOME not set
+        if let Ok(userprofile) = env::var("USERPROFILE") {
+            return Some(PathBuf::from(userprofile).join(".config").join("feedo"));
+        }
+
+        None
     }
 
     /// Get the configuration file path.
     #[must_use]
     pub fn config_path() -> Option<PathBuf> {
         Self::config_dir().map(|dir| dir.join("config.json"))
+    }
+
+    /// Get the data directory path (for caches, read states, etc.).
+    #[must_use]
+    pub fn data_dir() -> Option<PathBuf> {
+        Self::config_dir().map(|dir| dir.join("data"))
     }
 
     /// Load configuration from disk, creating default if not exists.
@@ -144,5 +175,25 @@ impl Config {
     #[must_use]
     pub fn total_feeds(&self) -> usize {
         self.folders.iter().map(|f| f.feeds.len()).sum::<usize>() + self.feeds.len()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = Config::default();
+        assert!(!config.folders.is_empty());
+        assert_eq!(config.refresh_interval, 30);
+    }
+
+    #[test]
+    fn test_config_serialization() {
+        let config = Config::default();
+        let json = serde_json::to_string(&config).unwrap();
+        let parsed: Config = serde_json::from_str(&json).unwrap();
+        assert_eq!(config.folders.len(), parsed.folders.len());
     }
 }

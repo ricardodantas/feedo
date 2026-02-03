@@ -1,58 +1,120 @@
-# 🐕 Feedo
+<p align="center">
+  <pre>
+      ██████╗██████╗██████╗██████╗  ██████╗
+      ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗
+      █████╗ █████╗ █████╗ ██║  ██║██║   ██║
+      ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║
+      ██║    ██████╗██████╗██████╔╝╚██████╔╝
+      ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝ 
+  </pre>
+  <br>
+  <b>(◕ᴥ◕) Your terminal RSS companion</b>
+  <br><br>
+  <a href="#installation">Installation</a> •
+  <a href="#features">Features</a> •
+  <a href="#usage">Usage</a> •
+  <a href="#configuration">Configuration</a> •
+  <a href="#keybindings">Keybindings</a>
+</p>
 
-```
-    ╭─────────────────────────────────────╮
-    │                                     │
-    │   ┏━╸┏━╸┏━╸╺┳┓┏━┓   🐕              │
-    │   ┣╸ ┣╸ ┣╸  ┃┃┃ ┃                   │
-    │   ╹  ╹  ┗━╸╺┻┛┗━┛                   │
-    │                                     │
-    │   Your terminal RSS reader          │
-    │                                     │
-    ╰─────────────────────────────────────╯
-```
+---
 
-A stunning cross-platform terminal RSS reader built with Rust and [ratatui](https://github.com/ratatui/ratatui).
+A **beautiful**, **fast**, and **modern** terminal RSS reader built with Rust.  
+Think [Reeder](https://reederapp.com/) meets the command line.
 
-Think [Reeder](https://reederapp.com/) but for your terminal.
+<br>
 
 ## ✨ Features
 
-- 📰 **Beautiful TUI** — Clean, modern three-panel interface
-- 📁 **Folders** — Organize feeds into collapsible groups with custom icons
-- 🔍 **Search** — Find articles across all feeds instantly
-- 🎨 **Themes** — Customizable accent colors
-- 📥 **OPML Support** — Import/export your subscriptions
-- ⚡ **Fast** — Async feed fetching with Tokio
-- 🦀 **Rust** — Memory safe, blazingly fast
+| Feature | Description |
+|---------|-------------|
+| 🎨 **Beautiful TUI** | Clean three-panel interface with rounded borders and smooth navigation |
+| 📁 **Smart Folders** | Organize feeds into collapsible folders with custom emoji icons |
+| 🔍 **Instant Search** | Find articles across all feeds with real-time filtering |
+| 🎭 **Themeable** | 8 accent colors to match your terminal aesthetic |
+| 📥 **OPML Support** | Import/export subscriptions for easy migration |
+| ⚡ **Blazingly Fast** | Async feed fetching with Tokio — no UI blocking |
+| 🦀 **Memory Safe** | Written in 100% safe Rust with zero unsafe code |
+| 🌍 **Cross-Platform** | Linux, macOS, Windows — same config path everywhere |
 
-## 📦 Installation
+<br>
 
-### From crates.io (coming soon)
+## 📸 Screenshots
 
-```bash
-cargo install feedo
+```
+┌─ 📡 Feeds ──────────┬─ 📰 Hacker News ─────────────────┬─ 📖 Content ───────────────────────┐
+│ ▼ 💻 Tech (12)      │ ● Show HN: I built a terminal... │                                    │
+│     ● Hacker News   │ ● Why Rust is taking over        │   Show HN: I built a terminal     │
+│     ○ Lobsters      │ ● The future of RSS in 2026      │   RSS reader in Rust              │
+│ ▶ 📰 News           │ ○ Understanding async/await      │                                    │
+│ ○ xkcd              │ ○ Modern CLI design patterns     │   📅 2026-02-03 02:30             │
+│                     │ ○ TUI frameworks compared        │                                    │
+│                     │                                  │   I've been working on this for   │
+│                     │                                  │   the past few weeks and wanted   │
+│                     │                                  │   to share it with you all...     │
+│                     │                                  │                                    │
+│                     │                                  │   🔗 https://news.ycombinator...  │
+└─────────────────────┴──────────────────────────────────┴────────────────────────────────────┘
+ ↑↓ navigate │ ↵ select │ / search │ r refresh │ o open │ q quit
 ```
 
-### From source
+<br>
+
+## 🚀 Installation
+
+### From Source (Recommended)
 
 ```bash
-git clone https://github.com/rdantas/feedo
+# Clone the repository
+git clone https://github.com/ricardodantas/feedo.git
 cd feedo
+
+# Build with optimizations
 cargo build --release
+
+# Run it!
 ./target/release/feedo
 ```
 
-## 🚀 Usage
+### Requirements
+
+- **Rust 1.75+** (2024 edition)
+- A terminal with Unicode support
+- That's it!
+
+<br>
+
+## 📖 Usage
+
+### Basic Commands
 
 ```bash
-feedo                           # Launch the TUI
-feedo --import feeds.opml       # Import feeds from OPML
-feedo --export backup.opml      # Export feeds to OPML
-feedo --help                    # Show help
+# Launch the TUI
+feedo
+
+# Import feeds from another reader
+feedo --import subscriptions.opml
+
+# Backup your feeds
+feedo --export backup.opml
+
+# Show help
+feedo --help
 ```
 
+### First Run
+
+On first launch, Feedo creates a default configuration with some starter feeds:
+- **Tech**: Hacker News, Lobsters
+- **News**: BBC World
+
+Feel free to modify `~/.config/feedo/config.json` to add your own!
+
+<br>
+
 ## ⌨️ Keybindings
+
+### Navigation
 
 | Key | Action |
 |-----|--------|
@@ -60,23 +122,44 @@ feedo --help                    # Show help
 | `k` / `↑` | Move up |
 | `l` / `→` / `Enter` | Select / Enter |
 | `h` / `←` | Go back |
-| `Tab` | Switch panel |
-| `/` | Search |
-| `r` | Refresh feeds |
-| `o` | Open in browser |
+| `g` | Jump to top |
+| `G` | Jump to bottom |
+| `Tab` | Switch between panels |
+
+### Actions
+
+| Key | Action |
+|-----|--------|
+| `r` | Refresh all feeds |
+| `o` | Open article in browser |
 | `Space` | Toggle read/unread |
-| `a` | Mark all read |
-| `g` / `G` | Jump to top/bottom |
+| `a` | Mark all as read |
+| `/` | Open search |
 | `q` / `Esc` | Quit |
+
+### Search Mode
+
+| Key | Action |
+|-----|--------|
+| `Enter` | Go to selected result |
+| `↑` / `↓` | Navigate results |
+| `Esc` | Cancel search |
+
+<br>
 
 ## ⚙️ Configuration
 
-Config location:
-- **Linux**: `~/.config/feedo/config.json`
-- **macOS**: `~/Library/Application Support/com.feedo.feedo/config.json`
-- **Windows**: `%APPDATA%\feedo\feedo\config.json`
+### Config Location
 
-### Example config
+Feedo uses `~/.config/feedo/` on **all platforms** for consistency:
+
+| Platform | Path |
+|----------|------|
+| Linux | `~/.config/feedo/config.json` |
+| macOS | `~/.config/feedo/config.json` |
+| Windows | `%USERPROFILE%\.config\feedo\config.json` |
+
+### Example Configuration
 
 ```json
 {
@@ -86,8 +169,18 @@ Config location:
       "icon": "💻",
       "expanded": true,
       "feeds": [
-        { "name": "Hacker News", "url": "https://hnrss.org/frontpage" },
-        { "name": "Lobsters", "url": "https://lobste.rs/rss" }
+        {
+          "name": "Hacker News",
+          "url": "https://hnrss.org/frontpage"
+        },
+        {
+          "name": "Lobsters",
+          "url": "https://lobste.rs/rss"
+        },
+        {
+          "name": "This Week in Rust",
+          "url": "https://this-week-in-rust.org/rss.xml"
+        }
       ]
     },
     {
@@ -95,60 +188,108 @@ Config location:
       "icon": "📰",
       "expanded": false,
       "feeds": [
-        { "name": "BBC World", "url": "https://feeds.bbci.co.uk/news/world/rss.xml" }
+        {
+          "name": "BBC World",
+          "url": "https://feeds.bbci.co.uk/news/world/rss.xml"
+        }
       ]
     }
   ],
   "feeds": [
-    { "name": "xkcd", "url": "https://xkcd.com/rss.xml" }
+    {
+      "name": "xkcd",
+      "url": "https://xkcd.com/rss.xml"
+    }
   ],
   "theme": {
     "accent": "cyan"
-  }
+  },
+  "refresh_interval": 30
 }
 ```
 
-### Theme colors
+### Theme Colors
 
-Available accent colors: `cyan`, `blue`, `green`, `yellow`, `magenta`, `red`, `orange`, `pink`
+| Color | Preview |
+|-------|---------|
+| `cyan` | 🔵 Default — clean and modern |
+| `blue` | 🔷 Classic blue |
+| `green` | 🟢 Nature vibes |
+| `yellow` | 🟡 Warm and sunny |
+| `magenta` | 🟣 Purple dreams |
+| `red` | 🔴 Bold and bright |
+| `orange` | 🟠 Energetic |
+| `pink` | 🩷 Soft and playful |
+
+<br>
 
 ## 🏗️ Architecture
 
 ```
 src/
-├── main.rs          # Entry point, CLI handling
-├── lib.rs           # Library root, module exports
-├── app/             # Main application logic
-│   └── mod.rs       # App state, event loop
-├── config/          # Configuration management
-│   ├── mod.rs
-│   └── data.rs      # Config data structures
-├── feed/            # Feed management
-│   ├── mod.rs
-│   ├── item.rs      # FeedItem struct
-│   ├── manager.rs   # FeedManager, folders
-│   └── parser.rs    # RSS/Atom parsing
-├── opml/            # OPML import/export
-│   └── mod.rs
-├── theme/           # Theme configuration
-│   └── mod.rs
-└── ui/              # Terminal UI
-    ├── mod.rs
-    ├── state.rs     # UI state
-    ├── input.rs     # Key handling
-    ├── render.rs    # Rendering logic
-    └── widgets/     # Custom widgets
+├── main.rs              # Entry point, CLI handling
+├── lib.rs               # Library root, public API
+│
+├── app/                 # Application core
+│   └── mod.rs           # App state, event loop, orchestration
+│
+├── config/              # Configuration management
+│   ├── mod.rs           # Module exports
+│   └── data.rs          # Config structs, load/save logic
+│
+├── feed/                # Feed management
+│   ├── mod.rs           # Module exports  
+│   ├── item.rs          # FeedItem struct
+│   ├── manager.rs       # FeedManager, Folder, async fetching
+│   └── parser.rs        # RSS/Atom parsing with feed-rs
+│
+├── opml/                # OPML import/export
+│   └── mod.rs           # Full OPML 2.0 support
+│
+├── theme/               # Theming system
+│   └── mod.rs           # AccentColor, Theme configuration
+│
+└── ui/                  # Terminal UI
+    ├── mod.rs           # Module exports
+    ├── state.rs         # UI state machine
+    ├── input.rs         # Keyboard input handling
+    ├── render.rs        # Rendering logic, layouts
+    └── widgets/         # Custom ratatui widgets
 ```
+
+### Design Principles
+
+- **Separation of Concerns** — Each module has a single responsibility
+- **Async by Default** — Network operations never block the UI
+- **Immutable State** — UI state is explicit and predictable
+- **Error Propagation** — Errors bubble up with context via `color-eyre`
+- **Zero Unsafe** — Memory safety guaranteed by the compiler
+
+<br>
 
 ## 🗺️ Roadmap
 
-- [ ] Feed discovery (autodiscover RSS from URLs)
-- [ ] Offline reading / article caching
-- [ ] Keyboard shortcut customization
-- [ ] Notifications for new articles
-- [ ] Vim-style command mode (`:`)
-- [ ] Multiple accounts / sync
-- [ ] Smart deduplication
+- [ ] **Feed Discovery** — Auto-detect RSS from any URL
+- [ ] **Offline Mode** — Cache articles for reading without internet
+- [ ] **Custom Keybindings** — Vim/Emacs presets, full remapping
+- [ ] **Notifications** — Desktop alerts for new articles
+- [ ] **Vim Mode** — `:` command mode for power users
+- [ ] **Sync** — Optional cloud sync via your own backend
+- [ ] **Plugins** — Lua scripting for custom behavior
+
+<br>
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing`)
+5. Open a Pull Request
+
+<br>
 
 ## 📄 License
 
@@ -156,4 +297,8 @@ MIT © Ricardo Dantas
 
 ---
 
-*Made with ❤️ and 🦀*
+<p align="center">
+  <b>Made with ❤️ and 🦀</b>
+  <br><br>
+  <code>(◕ᴥ◕)</code> Happy reading!
+</p>
