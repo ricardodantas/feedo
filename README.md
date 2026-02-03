@@ -351,11 +351,9 @@ src/
 
 - [x] **Feed Discovery** — Auto-detect RSS from any URL ✅
 - [x] **Offline Mode** — Cache articles for reading without internet ✅
-- [ ] **Custom Keybindings** — Vim/Emacs presets, full remapping
+- [ ] **Custom Keybindings** — Full key remapping
 - [ ] **Notifications** — Desktop alerts for new articles
-- [ ] **Vim Mode** — `:` command mode for power users
 - [ ] **Sync** — Optional cloud sync via your own backend
-- [ ] **Plugins** — Lua scripting for custom behavior
 
 <br>
 
