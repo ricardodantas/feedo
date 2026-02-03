@@ -37,9 +37,6 @@ pub const LOGO_COMPACT: &str = "◉ feedo";
 /// Minimal dog icon.
 pub const DOG_ICON: &str = "(◕ᴥ◕)";
 
-/// Loading animation frames.
-pub const LOADING_FRAMES: &[&str] = &["◐", "◓", "◑", "◒"];
-
 impl App {
     /// Render the entire UI.
     pub fn render(&self, frame: &mut Frame) {

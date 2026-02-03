@@ -2,6 +2,7 @@
 name = "feedo"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 authors = ["Ricardo Dantas"]
 description = "A stunning terminal RSS reader - like Reeder, but for your terminal 🐕"
 license = "MIT"
@@ -13,7 +14,7 @@ readme = "README.md"
 
 [dependencies]
 # Async runtime
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1.49", features = ["full"] }
 
 # TUI
 ratatui = "0.30"
@@ -26,28 +27,31 @@ feed-rs = "2.3"
 reqwest = { version = "0.13", default-features = false, features = ["rustls-native-certs", "charset"] }
 
 # Serialization
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 # XML for OPML
 quick-xml = { version = "0.39", features = ["serialize"] }
 
 # Error handling
-thiserror = "2"
+thiserror = "2.0"
 color-eyre = "0.6"
 
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
-directories = "6"
-open = "5"
+directories = "6.0"
+open = "5.3"
 regex-lite = "0.1"
 unicode-width = "0.2"
 textwrap = "0.16"
 html-escape = "0.2"
 
-# Logging (optional, for debugging)
+# Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
 
 [profile.release]
 lto = true
