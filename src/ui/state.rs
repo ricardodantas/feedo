@@ -20,6 +20,8 @@ pub enum Mode {
     Normal,
     /// Search input mode.
     Search,
+    /// Theme picker mode.
+    ThemePicker,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -67,6 +69,9 @@ pub struct UiState {
 
     /// Selected search result index.
     pub search_selected: usize,
+
+    /// Selected theme index in theme picker.
+    pub theme_picker_index: usize,
 
     /// Error message to display.
     pub error: Option<String>,

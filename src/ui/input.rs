@@ -21,6 +21,7 @@ impl App {
 
         match self.ui.mode {
             super::Mode::Search => self.handle_search_key(key),
+            super::Mode::ThemePicker => self.handle_theme_picker_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -84,6 +85,17 @@ impl App {
                 self.ui.search_results.clear();
             }
 
+            // Theme picker
+            KeyCode::Char('t') => {
+                self.ui.mode = super::Mode::ThemePicker;
+                // Set picker index to current theme
+                let current = self.theme.name;
+                self.ui.theme_picker_index = crate::theme::ThemeName::all()
+                    .iter()
+                    .position(|&t| t == current)
+                    .unwrap_or(0);
+            }
+
             // Navigation
             KeyCode::Tab => self.next_panel(),
             KeyCode::Char('j') | KeyCode::Down => self.move_down(),
@@ -103,6 +115,47 @@ impl App {
             KeyCode::Char(' ') => self.toggle_read(),
             KeyCode::Char('a') => self.mark_all_read(),
 
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    fn handle_theme_picker_key(&mut self, key: KeyCode) -> KeyResult {
+        let themes = crate::theme::ThemeName::all();
+        
+        match key {
+            KeyCode::Esc | KeyCode::Char('q') => {
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Enter => {
+                // Apply selected theme
+                let selected_theme = themes[self.ui.theme_picker_index];
+                self.theme = crate::Theme::new(selected_theme);
+                self.config.theme = self.theme.clone();
+                
+                // Save config
+                if let Err(e) = self.config.save() {
+                    self.ui.set_error(format!("Failed to save config: {e}"));
+                } else {
+                    self.ui.set_status(format!("Theme set to {}", selected_theme.display_name()));
+                }
+                
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Char('j') | KeyCode::Down => {
+                self.ui.theme_picker_index = (self.ui.theme_picker_index + 1) % themes.len();
+                // Live preview
+                self.theme = crate::Theme::new(themes[self.ui.theme_picker_index]);
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                self.ui.theme_picker_index = self
+                    .ui
+                    .theme_picker_index
+                    .checked_sub(1)
+                    .unwrap_or(themes.len() - 1);
+                // Live preview
+                self.theme = crate::Theme::new(themes[self.ui.theme_picker_index]);
+            }
             _ => {}
         }
         KeyResult::Continue

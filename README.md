@@ -135,6 +135,7 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `Space` | Toggle read/unread |
 | `a` | Mark all as read |
 | `/` | Open search |
+| `t` | Open theme picker |
 | `q` / `Esc` | Quit |
 
 ### Search Mode
@@ -144,6 +145,14 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `Enter` | Go to selected result |
 | `↑` / `↓` | Navigate results |
 | `Esc` | Cancel search |
+
+### Theme Picker
+
+| Key | Action |
+|-----|--------|
+| `↑` / `↓` | Browse themes (live preview) |
+| `Enter` | Apply and save theme |
+| `Esc` | Cancel |
 
 <br>
 

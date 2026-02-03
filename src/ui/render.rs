@@ -61,6 +61,10 @@ impl App {
             self.render_search_overlay(frame, area);
         }
 
+        if self.ui.mode == Mode::ThemePicker {
+            self.render_theme_picker(frame, area);
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -389,6 +393,63 @@ impl App {
             .wrap(Wrap { trim: true });
 
         frame.render_widget(error_block, popup_area);
+    }
+
+    fn render_theme_picker(&self, frame: &mut Frame, area: Rect) {
+        use crate::theme::ThemeName;
+        
+        let popup_area = centered_rect(50, 70, area);
+        frame.render_widget(Clear, popup_area);
+
+        let themes = ThemeName::all();
+        let items: Vec<ListItem> = themes
+            .iter()
+            .enumerate()
+            .map(|(i, theme)| {
+                let palette = theme.palette();
+                let selected = i == self.ui.theme_picker_index;
+                
+                // Create color preview squares
+                let preview = format!(
+                    "  {} {} ",
+                    if selected { "▸" } else { " " },
+                    theme.display_name()
+                );
+                
+                let style = if selected {
+                    Style::default()
+                        .fg(palette.accent)
+                        .bg(palette.selection)
+                        .bold()
+                } else {
+                    Style::default().fg(palette.fg)
+                };
+
+                ListItem::new(Line::from(vec![
+                    Span::styled(preview, style),
+                    Span::styled("█", Style::default().fg(palette.accent)),
+                    Span::styled("█", Style::default().fg(palette.secondary)),
+                    Span::styled("█", Style::default().fg(palette.success)),
+                    Span::styled("█", Style::default().fg(palette.warning)),
+                ]))
+            })
+            .collect();
+
+        let accent = self.theme.accent();
+        let theme_list = List::new(items)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(accent))
+                    .border_type(BorderType::Rounded)
+                    .title(format!(" 🎨 Select Theme ({}/{}) ", 
+                        self.ui.theme_picker_index + 1, 
+                        themes.len()
+                    ))
+                    .title_bottom(Line::from(" ↑↓ navigate │ ↵ apply │ Esc cancel ").centered()),
+            );
+
+        frame.render_widget(theme_list, popup_area);
     }
 }
 

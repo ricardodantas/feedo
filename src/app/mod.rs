@@ -19,6 +19,9 @@ use crate::ui::{FeedListItem, UiState};
 
 /// Main application state.
 pub struct App {
+    /// Application configuration.
+    pub config: Config,
+
     /// Feed manager.
     pub feeds: FeedManager,
 
@@ -44,6 +47,7 @@ impl App {
         feeds.refresh_all().await;
 
         let mut app = Self {
+            config,
             feeds,
             ui: UiState::default(),
             theme,

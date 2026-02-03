@@ -104,6 +104,7 @@ KEYBINDINGS:
       Space           Toggle read / unread
       a               Mark all as read
       /               Search across all feeds
+      t               Change theme
       q / Esc         Quit
 
 CONFIG:
