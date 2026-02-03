@@ -24,6 +24,22 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 
 <br>
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="screenshots/feedo-main.png" alt="Feedo Main View" width="800">
+  <br>
+  <em>Three-panel interface with Dracula theme</em>
+</p>
+
+<p align="center">
+  <img src="screenshots/feedo-themes.png" alt="Theme Picker" width="800">
+  <br>
+  <em>Built-in theme picker with 15 themes (press <code>t</code>)</em>
+</p>
+
+<br>
+
 ## ✨ Features
 
 | Feature | Description |
@@ -36,29 +52,6 @@ Think [Reeder](https://reederapp.com/) meets the command line.
 | ⚡ **Blazingly Fast** | Async feed fetching with Tokio — no UI blocking |
 | 🦀 **Memory Safe** | Written in 100% safe Rust with zero unsafe code |
 | 🌍 **Cross-Platform** | Linux, macOS, Windows — same config path everywhere |
-
-<br>
-
-## 📸 Screenshots
-
-```
-┌─ 📡 Feeds ──────────┬─ 📰 Hacker News ─────────────────┬─ 📖 Content ───────────────────────┐
-│ ▼ 💻 Tech (12)      │ ● Show HN: I built a terminal... │                                    │
-│     ● Hacker News   │ ● Why Rust is taking over        │   Show HN: I built a terminal     │
-│     ○ Lobsters      │ ● The future of RSS in 2026      │   RSS reader in Rust              │
-│ ▶ 📰 News           │ ○ Understanding async/await      │                                    │
-│ ○ xkcd              │ ○ Modern CLI design patterns     │   📅 2026-02-03 02:30             │
-│                     │ ○ TUI frameworks compared        │                                    │
-│                     │                                  │   I've been working on this for   │
-│                     │                                  │   the past few weeks and wanted   │
-│                     │                                  │   to share it with you all...     │
-│                     │                                  │                                    │
-│                     │                                  │   🔗 https://news.ycombinator...  │
-└─────────────────────┴──────────────────────────────────┴────────────────────────────────────┘
- ↑↓ navigate │ ↵ select │ / search │ r refresh │ o open │ q quit
-```
-
-<br>
 
 ## 🚀 Installation
 
