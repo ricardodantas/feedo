@@ -323,7 +323,12 @@ impl App {
             }
         } else {
             // Folder selection mode
-            let current_index = self.ui.add_feed_folder_index.map_or(0, |i| i + 1);
+            // Handle usize::MAX specially (it means "new folder" option)
+            let current_index = match self.ui.add_feed_folder_index {
+                None => 0,
+                Some(usize::MAX) => folder_count + 1,
+                Some(i) => i + 1,
+            };
 
             match key {
                 KeyCode::Esc => {
