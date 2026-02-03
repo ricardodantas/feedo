@@ -894,18 +894,32 @@ impl App {
             _ => return,
         };
 
-        if let Err(e) = open::that(&share_url) {
-            self.ui.show_error_dialog(
-                "Failed to open browser",
-                Some(format!("Error: {e}\n\nShare URL: {share_url}")),
-            );
+        let platform = match self.ui.share_platform_index {
+            0 => "X",
+            1 => "Mastodon",
+            2 => "Bluesky",
+            _ => "Unknown",
+        };
+
+        if let Err(_e) = open::that(&share_url) {
+            // Browser failed - try to copy to clipboard instead
+            match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(&share_url)) {
+                Ok(()) => {
+                    self.ui.show_error_dialog(
+                        "Link copied to clipboard",
+                        Some(format!(
+                            "Could not open browser, but the share link for {platform} has been copied to your clipboard.\n\n{share_url}"
+                        )),
+                    );
+                }
+                Err(clip_err) => {
+                    self.ui.show_error_dialog(
+                        "Failed to open browser or copy to clipboard",
+                        Some(format!("Clipboard error: {clip_err}\n\nShare URL: {share_url}")),
+                    );
+                }
+            }
         } else {
-            let platform = match self.ui.share_platform_index {
-                0 => "X",
-                1 => "Mastodon",
-                2 => "Bluesky",
-                _ => "Unknown",
-            };
             self.ui.set_status(format!("Sharing to {platform}..."));
         }
     }
