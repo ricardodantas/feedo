@@ -337,7 +337,7 @@ impl App {
         let status = self.ui.status.as_ref().map_or_else(
             || {
                 Span::styled(
-                    " ↑↓ navigate │ ↵ select │ n add │ r refresh │ o open │ s share │ a mark read │ / search │ t theme │ ? about │ q quit",
+                    " ↑↓ navigate │ ↵ select │ n add │ r refresh │ o open │ s share │ a mark all read │ / search │ t theme │ ? about │ q quit",
                     Style::default().fg(muted),
                 )
             },
