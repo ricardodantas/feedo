@@ -1005,8 +1005,8 @@ impl App {
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
             .split(layout[1]);
 
-        // Key badge style
-        let key_style = Style::default().fg(bg).bg(accent).bold();
+        // Key badge style - use black text for visibility on accent background
+        let key_style = Style::default().fg(Color::Black).bg(accent).bold();
         let bar_style = Style::default().fg(muted);
 
         // ─── LEFT COLUMN ───
