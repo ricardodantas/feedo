@@ -24,7 +24,7 @@ pub struct FeedItem {
 impl FeedItem {
     /// Create a new feed item.
     #[must_use]
-    pub fn new(title: String) -> Self {
+    pub const fn new(title: String) -> Self {
         Self {
             title,
             link: None,
@@ -35,17 +35,17 @@ impl FeedItem {
     }
 
     /// Set the item as read.
-    pub fn mark_read(&mut self) {
+    pub const fn mark_read(&mut self) {
         self.read = true;
     }
 
     /// Set the item as unread.
-    pub fn mark_unread(&mut self) {
+    pub const fn mark_unread(&mut self) {
         self.read = false;
     }
 
     /// Toggle read state.
-    pub fn toggle_read(&mut self) {
+    pub const fn toggle_read(&mut self) {
         self.read = !self.read;
     }
 }

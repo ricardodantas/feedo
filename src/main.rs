@@ -1,6 +1,6 @@
 //! Application entry point and CLI handling.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use color_eyre::Result;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
     // Parse CLI arguments
     match parse_args()? {
         Command::Run => run_tui().await,
-        Command::Import(path) => import_opml(&path).await,
+        Command::Import(path) => import_opml(&path),
         Command::Export(path) => export_opml(&path),
         Command::Help => {
             print_help();
@@ -72,8 +72,11 @@ fn parse_args() -> Result<Command> {
 }
 
 fn print_help() {
+    let config_path = Config::config_path()
+        .map_or_else(|| "Unknown".to_string(), |p| p.display().to_string());
+
     println!(
-        r#"{}
+        r"{}
 
 A stunning terminal RSS reader — your news, your way.
 
@@ -104,21 +107,19 @@ KEYBINDINGS:
       q / Esc         Quit
 
 CONFIG:
-    {config}
+    {config_path}
 
 HOMEPAGE:
     https://github.com/ricardodantas/feedo
-"#,
+",
         feedo::ui::LOGO,
-        config = Config::config_path()
-            .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "Unknown".to_string())
     );
 }
 
 fn print_version() {
+    let version = env!("CARGO_PKG_VERSION");
     println!(
-        r#"
+        r"
       ██████╗██████╗██████╗██████╗  ██████╗
       ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗
       █████╗ █████╗ █████╗ ██║  ██║██║   ██║
@@ -126,9 +127,8 @@ fn print_version() {
       ██║    ██████╗██████╗██████╔╝╚██████╔╝
       ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝ 
                         
-      v{}  (◕ᴥ◕)
-"#,
-        env!("CARGO_PKG_VERSION")
+      v{version}  (◕ᴥ◕)
+"
     );
 }
 
@@ -137,7 +137,7 @@ async fn run_tui() -> Result<()> {
     app.run().await
 }
 
-async fn import_opml(path: &PathBuf) -> Result<()> {
+fn import_opml(path: &Path) -> Result<()> {
     let mut config = Config::load()?;
     let count = feedo::opml::import(path, &mut config)?;
     config.save()?;
@@ -145,7 +145,7 @@ async fn import_opml(path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn export_opml(path: &PathBuf) -> Result<()> {
+fn export_opml(path: &Path) -> Result<()> {
     let config = Config::load()?;
     feedo::opml::export(&config, path)?;
     println!("(◕ᴥ◕) Exported feeds to {}", path.display());

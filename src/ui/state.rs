@@ -33,6 +33,7 @@ pub enum FeedListItem {
 
 /// Complete UI state.
 #[derive(Debug)]
+#[derive(Default)]
 pub struct UiState {
     /// Currently active panel.
     pub panel: Panel,
@@ -61,7 +62,7 @@ pub struct UiState {
     /// Search query.
     pub search_query: String,
 
-    /// Search results: (feed_index, item_index).
+    /// Search results: (`feed_index`, `item_index`).
     pub search_results: Vec<(usize, usize)>,
 
     /// Selected search result index.
@@ -74,25 +75,6 @@ pub struct UiState {
     pub status: Option<String>,
 }
 
-impl Default for UiState {
-    fn default() -> Self {
-        Self {
-            panel: Panel::default(),
-            mode: Mode::default(),
-            feed_list: Vec::new(),
-            feed_list_index: 0,
-            selected_feed: None,
-            selected_item: 0,
-            show_content: false,
-            scroll_offset: 0,
-            search_query: String::new(),
-            search_results: Vec::new(),
-            search_selected: 0,
-            error: None,
-            status: None,
-        }
-    }
-}
 
 impl UiState {
     /// Set an error message.

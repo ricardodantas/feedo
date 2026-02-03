@@ -136,8 +136,7 @@ impl App {
         self.ui
             .selected_feed
             .and_then(|idx| self.feeds.feeds.get(idx))
-            .map(|f| f.items.as_slice())
-            .unwrap_or(&[])
+            .map_or(&[], |f| f.items.as_slice())
     }
 
     /// Get the currently selected item.

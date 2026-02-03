@@ -2,7 +2,7 @@
 
 use ratatui::{
     prelude::*,
-    widgets::*,
+    widgets::{Paragraph, ListItem, List, Block, Borders, BorderType, Wrap, Clear},
 };
 
 use crate::app::App;
@@ -10,7 +10,7 @@ use super::{Mode, Panel};
 use super::state::FeedListItem;
 
 /// Modern ASCII art logo for Feedo - a cute RSS-eating dog.
-pub const LOGO: &str = r#"
+pub const LOGO: &str = r"
                     ╭──────────────────────────────────────────╮
                     │                                          │
                     │      ██████╗██████╗██████╗██████╗  ██████╗│
@@ -29,7 +29,7 @@ pub const LOGO: &str = r#"
                     │      Your terminal RSS companion 🦴       │
                     │                                          │
                     ╰──────────────────────────────────────────╯
-"#;
+";
 
 /// Compact logo for the title bar.
 pub const LOGO_COMPACT: &str = "◉ feedo";
@@ -69,9 +69,9 @@ impl App {
     fn render_title_bar(&self, frame: &mut Frame, area: Rect) {
         let unread = self.feeds.total_unread_count();
         let title = if unread > 0 {
-            format!(" {} │ {} unread", LOGO_COMPACT, unread)
+            format!(" {LOGO_COMPACT} │ {unread} unread")
         } else {
-            format!(" {}", LOGO_COMPACT)
+            format!(" {LOGO_COMPACT}")
         };
 
         let bar = Paragraph::new(title)
@@ -249,32 +249,35 @@ impl App {
     }
 
     fn render_content_panel(&self, frame: &mut Frame, area: Rect) {
+        use std::fmt::Write;
+        
         let is_active = self.ui.panel == Panel::Content;
         let accent = self.theme.accent();
         let muted = self.theme.muted();
 
-        let content = if let Some(item) = self.selected_item() {
-            let mut text = format!("  {}\n\n", item.title);
+        let content = self.selected_item().map_or_else(
+            || format!("\n\n    {DOG_ICON}\n\n    Select an article to read"),
+            |item| {
+                let mut text = format!("  {}\n\n", item.title);
 
-            if let Some(date) = item.published {
-                text.push_str(&format!("  📅 {}\n\n", date.format("%Y-%m-%d %H:%M")));
-            }
+                if let Some(date) = item.published {
+                    let _ = write!(text, "  📅 {}\n\n", date.format("%Y-%m-%d %H:%M"));
+                }
 
-            if let Some(summary) = &item.summary {
-                // Strip HTML tags
-                let clean = strip_html(summary);
-                text.push_str("  ");
-                text.push_str(&clean.replace('\n', "\n  "));
-            }
+                if let Some(summary) = &item.summary {
+                    // Strip HTML tags
+                    let clean = strip_html(summary);
+                    text.push_str("  ");
+                    text.push_str(&clean.replace('\n', "\n  "));
+                }
 
-            if let Some(link) = &item.link {
-                text.push_str(&format!("\n\n  🔗 {link}"));
-            }
+                if let Some(link) = &item.link {
+                    let _ = write!(text, "\n\n  🔗 {link}");
+                }
 
-            text
-        } else {
-            format!("\n\n    {DOG_ICON}\n\n    Select an article to read")
-        };
+                text
+            },
+        );
 
         let border_style = if is_active {
             Style::default().fg(accent)
@@ -300,14 +303,15 @@ impl App {
         let muted = self.theme.muted();
         let accent = self.theme.accent();
 
-        let status = if let Some(msg) = &self.ui.status {
-            Span::styled(format!(" {DOG_ICON} {msg}"), Style::default().fg(accent))
-        } else {
-            Span::styled(
-                " ↑↓ navigate │ ↵ select │ / search │ r refresh │ o open │ q quit",
-                Style::default().fg(muted),
-            )
-        };
+        let status = self.ui.status.as_ref().map_or_else(
+            || {
+                Span::styled(
+                    " ↑↓ navigate │ ↵ select │ / search │ r refresh │ o open │ q quit",
+                    Style::default().fg(muted),
+                )
+            },
+            |msg| Span::styled(format!(" {DOG_ICON} {msg}"), Style::default().fg(accent)),
+        );
 
         let bar = Paragraph::new(Line::from(status));
         frame.render_widget(bar, area);

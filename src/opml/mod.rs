@@ -67,6 +67,8 @@ pub fn import(path: &Path, config: &mut Config) -> Result<usize> {
 ///
 /// Returns an error if the file cannot be written.
 pub fn export(config: &Config, path: &Path) -> Result<()> {
+    use std::fmt::Write;
+    
     let mut xml = String::from(
         r#"<?xml version="1.0" encoding="UTF-8"?>
 <opml version="2.0">
@@ -79,21 +81,16 @@ pub fn export(config: &Config, path: &Path) -> Result<()> {
 
     // Export folders
     for folder in &config.folders {
-        xml.push_str(&format!(
-            r#"    <outline text="{}" title="{}">"#,
-            escape_xml(&folder.name),
-            escape_xml(&folder.name)
-        ));
-        xml.push('\n');
+        let name = escape_xml(&folder.name);
+        let _ = writeln!(xml, r#"    <outline text="{name}" title="{name}">"#);
 
         for feed in &folder.feeds {
-            xml.push_str(&format!(
-                r#"      <outline type="rss" text="{}" title="{}" xmlUrl="{}"/>"#,
-                escape_xml(&feed.name),
-                escape_xml(&feed.name),
-                escape_xml(&feed.url)
-            ));
-            xml.push('\n');
+            let feed_name = escape_xml(&feed.name);
+            let feed_url = escape_xml(&feed.url);
+            let _ = writeln!(
+                xml,
+                r#"      <outline type="rss" text="{feed_name}" title="{feed_name}" xmlUrl="{feed_url}"/>"#
+            );
         }
 
         xml.push_str("    </outline>\n");
@@ -101,13 +98,12 @@ pub fn export(config: &Config, path: &Path) -> Result<()> {
 
     // Export root-level feeds
     for feed in &config.feeds {
-        xml.push_str(&format!(
-            r#"    <outline type="rss" text="{}" title="{}" xmlUrl="{}"/>"#,
-            escape_xml(&feed.name),
-            escape_xml(&feed.name),
-            escape_xml(&feed.url)
-        ));
-        xml.push('\n');
+        let feed_name = escape_xml(&feed.name);
+        let feed_url = escape_xml(&feed.url);
+        let _ = writeln!(
+            xml,
+            r#"    <outline type="rss" text="{feed_name}" title="{feed_name}" xmlUrl="{feed_url}"/>"#
+        );
     }
 
     xml.push_str("  </body>\n</opml>\n");
@@ -121,7 +117,7 @@ pub fn export(config: &Config, path: &Path) -> Result<()> {
 struct OpmlOutline {
     title: String,
     xml_url: Option<String>,
-    children: Vec<OpmlOutline>,
+    children: Vec<Self>,
 }
 
 /// Parse OPML XML into outline structures.

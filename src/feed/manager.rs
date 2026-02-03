@@ -29,7 +29,7 @@ pub struct Feed {
 impl Feed {
     /// Create a new feed.
     #[must_use]
-    pub fn new(name: String, url: String) -> Self {
+    pub const fn new(name: String, url: String) -> Self {
         Self {
             name,
             url,
@@ -72,7 +72,7 @@ pub struct Folder {
 impl Folder {
     /// Create a new folder.
     #[must_use]
-    pub fn new(name: String, icon: Option<String>, expanded: bool) -> Self {
+    pub const fn new(name: String, icon: Option<String>, expanded: bool) -> Self {
         Self {
             name,
             icon,
@@ -193,7 +193,7 @@ impl FeedManager {
     pub fn folder_unread_count(&self, folder_index: usize) -> usize {
         self.folders
             .get(folder_index)
-            .map(|folder| {
+            .map_or(0, |folder| {
                 folder
                     .feed_indices
                     .iter()
@@ -201,7 +201,6 @@ impl FeedManager {
                     .map(Feed::unread_count)
                     .sum()
             })
-            .unwrap_or(0)
     }
 
     /// Get total unread count.

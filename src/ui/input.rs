@@ -20,12 +20,12 @@ impl App {
         self.ui.clear_status();
 
         match self.ui.mode {
-            super::Mode::Search => self.handle_search_key(key).await,
+            super::Mode::Search => self.handle_search_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
 
-    async fn handle_search_key(&mut self, key: KeyCode) -> KeyResult {
+    fn handle_search_key(&mut self, key: KeyCode) -> KeyResult {
         match key {
             KeyCode::Esc => {
                 self.ui.mode = super::Mode::Normal;
@@ -108,7 +108,7 @@ impl App {
         KeyResult::Continue
     }
 
-    fn next_panel(&mut self) {
+    const fn next_panel(&mut self) {
         self.ui.panel = match self.ui.panel {
             super::Panel::Feeds => super::Panel::Items,
             super::Panel::Items => {
@@ -216,7 +216,7 @@ impl App {
         }
     }
 
-    fn go_back(&mut self) {
+    const fn go_back(&mut self) {
         match self.ui.panel {
             super::Panel::Content => {
                 self.ui.panel = super::Panel::Items;
@@ -257,11 +257,11 @@ impl App {
     }
 
     fn update_selected_feed(&mut self) {
-        if let Some(item) = self.ui.feed_list.get(self.ui.feed_list_index) {
-            if let super::state::FeedListItem::Feed(idx) = item {
-                self.ui.selected_feed = Some(*idx);
-                self.ui.selected_item = 0;
-            }
+        if let Some(super::state::FeedListItem::Feed(idx)) =
+            self.ui.feed_list.get(self.ui.feed_list_index)
+        {
+            self.ui.selected_feed = Some(*idx);
+            self.ui.selected_item = 0;
         }
     }
 
