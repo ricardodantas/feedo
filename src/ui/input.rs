@@ -719,6 +719,12 @@ impl App {
                 if let Some(feed) = self.feeds.feeds.get_mut(feed_idx) {
                     if let Some(item) = feed.items.get_mut(self.ui.selected_item) {
                         item.toggle_read();
+                        // Persist to cache
+                        let feed_url = feed.url.clone();
+                        let item_id = item.id.clone();
+                        let is_read = item.read;
+                        self.feeds.cache.set_item_read(&feed_url, &item_id, is_read);
+                        let _ = self.feeds.cache.save();
                     }
                 }
             }
@@ -730,6 +736,11 @@ impl App {
             if let Some(feed) = self.feeds.feeds.get_mut(feed_idx) {
                 if let Some(item) = feed.items.get_mut(self.ui.selected_item) {
                     item.mark_read();
+                    // Persist to cache
+                    let feed_url = feed.url.clone();
+                    let item_id = item.id.clone();
+                    self.feeds.cache.set_item_read(&feed_url, &item_id, true);
+                    let _ = self.feeds.cache.save();
                 }
             }
         }
@@ -739,6 +750,10 @@ impl App {
         if let Some(feed_idx) = self.ui.selected_feed {
             if let Some(feed) = self.feeds.feeds.get_mut(feed_idx) {
                 feed.mark_all_read();
+                // Persist to cache
+                let feed_url = feed.url.clone();
+                self.feeds.cache.mark_feed_read(&feed_url);
+                let _ = self.feeds.cache.save();
             }
         }
     }
