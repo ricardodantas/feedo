@@ -1,0 +1,206 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const baseUrl = import.meta.env.BASE_URL;
+
+const themes = [
+  { name: 'Dracula', slug: 'dracula', desc: 'Dark purple vampire', colors: ['#282a36', '#bd93f9', '#ff79c6', '#8be9fd', '#50fa7b'] },
+  { name: 'Nord', slug: 'nord', desc: 'Arctic blue', colors: ['#2e3440', '#88c0d0', '#81a1c1', '#bf616a', '#a3be8c'] },
+  { name: 'Tokyo Night', slug: 'tokyo-night', desc: 'Futuristic neon', colors: ['#1a1b26', '#7aa2f7', '#bb9af7', '#f7768e', '#9ece6a'] },
+  { name: 'Catppuccin Mocha', slug: 'catppuccin-mocha', desc: 'Warm pastel', colors: ['#1e1e2e', '#89b4fa', '#f5c2e7', '#f38ba8', '#a6e3a1'] },
+  { name: 'Catppuccin Latte', slug: 'catppuccin-latte', desc: 'Light pastel', colors: ['#eff1f5', '#1e66f5', '#ea76cb', '#d20f39', '#40a02b'] },
+  { name: 'Gruvbox Dark', slug: 'gruvbox-dark', desc: 'Retro groove', colors: ['#282828', '#fabd2f', '#d3869b', '#fb4934', '#b8bb26'] },
+  { name: 'Gruvbox Light', slug: 'gruvbox-light', desc: 'Light groove', colors: ['#fbf1c7', '#b57614', '#8f3f71', '#9d0006', '#79740e'] },
+  { name: 'One Dark Pro', slug: 'one-dark-pro', desc: 'Atom iconic', colors: ['#282c34', '#61afef', '#c678dd', '#e06c75', '#98c379'] },
+  { name: 'Solarized Dark', slug: 'solarized-dark', desc: 'Precision dark', colors: ['#002b36', '#268bd2', '#6c71c4', '#dc322f', '#859900'] },
+  { name: 'Solarized Light', slug: 'solarized-light', desc: 'Precision light', colors: ['#fdf6e3', '#268bd2', '#6c71c4', '#dc322f', '#859900'] },
+  { name: 'Monokai Pro', slug: 'monokai-pro', desc: 'Classic syntax', colors: ['#2d2a2e', '#ffd866', '#ab9df2', '#ff6188', '#a9dc76'] },
+  { name: 'Rosé Pine', slug: 'rose-pine', desc: 'Soho vibes', colors: ['#191724', '#ebbcba', '#c4a7e7', '#eb6f92', '#9ccfd8'] },
+  { name: 'Kanagawa', slug: 'kanagawa', desc: 'Hokusai art', colors: ['#1f1f28', '#7fb4ca', '#957fb8', '#c34043', '#76946a'] },
+  { name: 'Everforest', slug: 'everforest', desc: 'Green forest', colors: ['#2d353b', '#83c120', '#d699b6', '#e67e80', '#a7c080'] },
+  { name: 'Cyberpunk', slug: 'cyberpunk', desc: 'Neon future', colors: ['#000000', '#00ffff', '#ff00ff', '#ff003c', '#00ff64'] },
+];
+---
+
+<Layout title="Themes - Feedo">
+  <div class="themes-page">
+    <header class="themes-header">
+      <h1>🎭 Themes</h1>
+      <p>15 beautiful color schemes to match your style. Press <code>t</code> in Feedo to open the theme picker.</p>
+    </header>
+
+    <section class="themes-grid-section">
+      <div class="themes-grid">
+        {themes.map((theme) => (
+          <div class="theme-card" data-theme={theme.slug}>
+            <div class="theme-preview" style={`background: ${theme.colors[0]}`}>
+              <div class="theme-colors">
+                {theme.colors.slice(1).map((color) => (
+                  <span class="theme-color" style={`background: ${color}`}></span>
+                ))}
+              </div>
+            </div>
+            <div class="theme-info">
+              <h3>{theme.name}</h3>
+              <p>{theme.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="theme-usage">
+      <h2>How to Change Themes</h2>
+      <div class="usage-methods">
+        <div class="usage-card">
+          <h3>🎨 In the TUI</h3>
+          <p>Press <code>t</code> to open the theme picker with live preview. Use <code>j</code>/<code>k</code> to navigate and <code>Enter</code> to select.</p>
+        </div>
+        <div class="usage-card">
+          <h3>⚙️ In Config</h3>
+          <p>Edit <code>~/.config/feedo/config.toml</code> and set the theme:</p>
+          <pre><code>theme = "dracula"</code></pre>
+        </div>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .themes-page {
+    padding: calc(var(--nav-height) + 3rem) 1.5rem 4rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .themes-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+
+  .themes-header h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .themes-header p {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .themes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .theme-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .theme-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent-purple);
+  }
+
+  .theme-preview {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: center;
+  }
+
+  .theme-colors {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .theme-color {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .theme-info {
+    padding: 1rem 1.5rem 1.5rem;
+  }
+
+  .theme-info h3 {
+    font-size: 1.125rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .theme-info p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+  }
+
+  .theme-usage {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 3rem;
+    border: 1px solid var(--bg-tertiary);
+  }
+
+  .theme-usage h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .usage-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .usage-card {
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid var(--bg-tertiary);
+  }
+
+  .usage-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .usage-card p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  .usage-card pre {
+    margin: 0;
+  }
+
+  @media (max-width: 768px) {
+    .themes-page {
+      padding: calc(var(--nav-height) + 2rem) 1rem 3rem;
+    }
+
+    .themes-header h1 {
+      font-size: 2rem;
+    }
+
+    .themes-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .theme-usage {
+      padding: 2rem 1.5rem;
+    }
+
+    .usage-methods {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,392 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const baseUrl = import.meta.env.BASE_URL;
+---
+
+<Layout title="Documentation - Feedo">
+  <div class="docs-layout">
+    <aside class="docs-sidebar">
+      <nav class="docs-nav">
+        <h3>Getting Started</h3>
+        <ul>
+          <li><a href="#installation">Installation</a></li>
+          <li><a href="#quick-start">Quick Start</a></li>
+          <li><a href="#adding-feeds">Adding Feeds</a></li>
+        </ul>
+
+        <h3>Usage</h3>
+        <ul>
+          <li><a href="#navigation">Navigation</a></li>
+          <li><a href="#keybindings">Keybindings</a></li>
+          <li><a href="#searching">Searching</a></li>
+          <li><a href="#folders">Folders</a></li>
+        </ul>
+
+        <h3>Configuration</h3>
+        <ul>
+          <li><a href="#config-file">Config File</a></li>
+          <li><a href="#themes">Themes</a></li>
+          <li><a href="#opml">OPML Import/Export</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <div class="docs-content">
+      <div class="docs-header">
+        <h1>Documentation</h1>
+        <p>Everything you need to know about using Feedo to read your RSS feeds.</p>
+      </div>
+
+      <section id="installation">
+        <h2>Installation</h2>
+        <p>Choose your preferred installation method:</p>
+
+        <h3>Homebrew (Recommended)</h3>
+        <pre><code>brew install ricardodantas/tap/feedo</code></pre>
+
+        <h3>Cargo</h3>
+        <pre><code>cargo install feedo</code></pre>
+
+        <h3>Pre-built Binaries</h3>
+        <p>Download pre-built binaries from the <a href="https://github.com/ricardodantas/feedo/releases" target="_blank">GitHub Releases</a> page. Available for:</p>
+        <ul>
+          <li>Linux (x86_64, aarch64)</li>
+          <li>macOS (Intel, Apple Silicon)</li>
+          <li>Windows (x86_64)</li>
+        </ul>
+      </section>
+
+      <section id="quick-start">
+        <h2>Quick Start</h2>
+        <ol class="numbered-steps">
+          <li>
+            <strong>Launch Feedo</strong>
+            <pre><code>feedo</code></pre>
+          </li>
+          <li>
+            <strong>Add your first feed</strong>
+            <p>Press <code>n</code> to open the add feed dialog, then paste a URL. Feedo will auto-detect the RSS/Atom feed.</p>
+          </li>
+          <li>
+            <strong>Navigate and read</strong>
+            <p>Use <code>j</code>/<code>k</code> to move, <code>Enter</code> to select, and <code>o</code> to open in browser.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="adding-feeds">
+        <h2>Adding Feeds</h2>
+        <p>Press <code>n</code> to add a new feed. You can enter:</p>
+        <ul>
+          <li><strong>Direct feed URL</strong> - RSS/Atom feed URL</li>
+          <li><strong>Website URL</strong> - Feedo will auto-discover the feed</li>
+        </ul>
+        <p>Feedo automatically detects feeds from websites using standard meta tags and common feed paths.</p>
+      </section>
+
+      <section id="navigation">
+        <h2>Navigation</h2>
+        <p>Feedo uses a three-panel layout:</p>
+        <ul>
+          <li><strong>Left panel</strong> - Feeds and folders</li>
+          <li><strong>Middle panel</strong> - Article list</li>
+          <li><strong>Right panel</strong> - Article content</li>
+        </ul>
+        <p>Press <code>Tab</code> to switch between panels, or use <code>h</code>/<code>l</code> to navigate left/right.</p>
+      </section>
+
+      <section id="keybindings" class="keybindings-section">
+        <h2>Keybindings</h2>
+        
+        <h3>Navigation</h3>
+        <table>
+          <thead>
+            <tr><th>Key</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>j</code> / <code>↓</code></td><td>Move down</td></tr>
+            <tr><td><code>k</code> / <code>↑</code></td><td>Move up</td></tr>
+            <tr><td><code>l</code> / <code>→</code> / <code>Enter</code></td><td>Select / Enter</td></tr>
+            <tr><td><code>h</code> / <code>←</code></td><td>Go back</td></tr>
+            <tr><td><code>g</code></td><td>Jump to top</td></tr>
+            <tr><td><code>G</code></td><td>Jump to bottom</td></tr>
+            <tr><td><code>Tab</code></td><td>Switch panels</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Actions</h3>
+        <table>
+          <thead>
+            <tr><th>Key</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>n</code></td><td>Add new feed</td></tr>
+            <tr><td><code>d</code> / <code>Del</code></td><td>Delete feed</td></tr>
+            <tr><td><code>r</code></td><td>Refresh all feeds</td></tr>
+            <tr><td><code>o</code></td><td>Open in browser</td></tr>
+            <tr><td><code>Space</code></td><td>Toggle read/unread</td></tr>
+            <tr><td><code>a</code></td><td>Mark all as read</td></tr>
+            <tr><td><code>/</code></td><td>Search</td></tr>
+            <tr><td><code>t</code></td><td>Theme picker</td></tr>
+            <tr><td><code>?</code></td><td>Help</td></tr>
+            <tr><td><code>A</code></td><td>About</td></tr>
+            <tr><td><code>q</code> / <code>Esc</code></td><td>Quit</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="searching">
+        <h2>Searching</h2>
+        <p>Press <code>/</code> to open the search dialog. Search works across:</p>
+        <ul>
+          <li>Article titles</li>
+          <li>Article content</li>
+          <li>Feed names</li>
+        </ul>
+        <p>Results update in real-time as you type. Press <code>Esc</code> to close search.</p>
+      </section>
+
+      <section id="folders">
+        <h2>Folders</h2>
+        <p>Organize your feeds into folders for easier navigation:</p>
+        <ul>
+          <li>Folders can be collapsed/expanded with <code>Enter</code></li>
+          <li>Add custom emoji icons to folders</li>
+          <li>Drag and drop feeds between folders (coming soon)</li>
+        </ul>
+      </section>
+
+      <section id="config-file">
+        <h2>Config File</h2>
+        <p>Feedo stores its configuration at <code>~/.config/feedo/config.toml</code>:</p>
+        <pre><code># Theme (see Themes page for all options)
+theme = "dracula"
+
+# Refresh interval in minutes
+refresh_interval = 30
+
+# Maximum articles to keep per feed
+max_articles = 100
+
+# Open links in browser
+browser = "default"</code></pre>
+      </section>
+
+      <section id="themes">
+        <h2>Themes</h2>
+        <p>Feedo comes with 15 beautiful themes. Change themes by:</p>
+        <ul>
+          <li>Pressing <code>t</code> in the TUI for live preview</li>
+          <li>Setting <code>theme = "theme-name"</code> in config</li>
+        </ul>
+        <p>See the <a href={`${baseUrl}themes`}>Themes page</a> for all available options.</p>
+      </section>
+
+      <section id="opml">
+        <h2>OPML Import/Export</h2>
+        <p>Migrate your feeds from other RSS readers:</p>
+        
+        <h3>Import</h3>
+        <pre><code>feedo import feeds.opml</code></pre>
+
+        <h3>Export</h3>
+        <pre><code>feedo export > feeds.opml</code></pre>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .docs-layout {
+    display: flex;
+    padding-top: var(--nav-height);
+    min-height: calc(100vh - var(--nav-height));
+  }
+
+  .docs-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--bg-tertiary);
+    position: sticky;
+    top: var(--nav-height);
+    height: calc(100vh - var(--nav-height));
+    overflow-y: auto;
+    padding: 2rem 1.5rem;
+  }
+
+  .docs-nav h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  .docs-nav h3:first-child {
+    margin-top: 0;
+  }
+
+  .docs-nav ul {
+    list-style: none;
+  }
+
+  .docs-nav li {
+    margin-bottom: 0.5rem;
+  }
+
+  .docs-nav a {
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+    display: block;
+    padding: 0.25rem 0;
+    transition: color 0.2s;
+  }
+
+  .docs-nav a:hover {
+    color: var(--accent-purple);
+  }
+
+  .docs-content {
+    flex: 1;
+    padding: 3rem 4rem;
+    max-width: 900px;
+  }
+
+  .docs-header {
+    margin-bottom: 3rem;
+  }
+
+  .docs-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .docs-header p {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+  }
+
+  section {
+    margin-bottom: 4rem;
+  }
+
+  section h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--bg-tertiary);
+  }
+
+  section h3 {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  section p {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    line-height: 1.7;
+  }
+
+  section ul, section ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+
+  section li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .numbered-steps {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: step;
+  }
+
+  .numbered-steps li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 3rem;
+    margin-bottom: 2rem;
+  }
+
+  .numbered-steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2rem;
+    height: 2rem;
+    background: var(--accent-purple);
+    color: var(--bg-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  pre {
+    margin-bottom: 1rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--bg-tertiary);
+  }
+
+  th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+  }
+
+  td code {
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 1024px) {
+    .docs-sidebar {
+      display: none;
+    }
+
+    .docs-content {
+      padding: 2rem 1.5rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .docs-content {
+      padding: 1.5rem 1rem;
+    }
+
+    .numbered-steps li {
+      padding-left: 2.5rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    table {
+      display: block;
+      overflow-x: auto;
+      font-size: 0.875rem;
+    }
+  }
+</style>
