@@ -1,0 +1,270 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Theme data with their colors
+const themes = [
+  { name: 'Dracula', desc: '🦇 Dark purple', colors: ['#bd93f9', '#ff79c6', '#8be9fd', '#50fa7b'] },
+  { name: 'One Dark Pro', desc: '⚛️ Atom\'s iconic', colors: ['#61afef', '#c678dd', '#56b6c2', '#98c379'] },
+  { name: 'Nord', desc: '❄️ Arctic blue', colors: ['#88c0d0', '#81a1c1', '#bf616a', '#a3be8c'] },
+  { name: 'Catppuccin Mocha', desc: '🐱 Warm pastel', colors: ['#89b4fa', '#f5c2e7', '#f38ba8', '#a6e3a1'] },
+  { name: 'Catppuccin Latte', desc: '☕ Light pastel', colors: ['#1e66f5', '#ea76cb', '#d20f39', '#40a02b'] },
+  { name: 'Gruvbox Dark', desc: '🎸 Retro groove', colors: ['#fabd2f', '#d3869b', '#fb4934', '#b8bb26'] },
+  { name: 'Gruvbox Light', desc: '🌻 Light groove', colors: ['#b57614', '#8f3f71', '#9d0006', '#79740e'] },
+  { name: 'Tokyo Night', desc: '🌃 Futuristic', colors: ['#7aa2f7', '#bb9af7', '#f7768e', '#9ece6a'] },
+  { name: 'Solarized Dark', desc: '☀️ Precision dark', colors: ['#268bd2', '#6c71c4', '#dc322f', '#859900'] },
+  { name: 'Solarized Light', desc: '🌞 Precision light', colors: ['#268bd2', '#6c71c4', '#dc322f', '#859900'] },
+  { name: 'Monokai Pro', desc: '🎨 Classic syntax', colors: ['#ffd866', '#ab9df2', '#ff6188', '#a9dc76'] },
+  { name: 'Rosé Pine', desc: '🌹 Soho vibes', colors: ['#ebbcba', '#c4a7e7', '#eb6f92', '#9ccfd8'] },
+  { name: 'Kanagawa', desc: '🌊 Hokusai art', colors: ['#7fb4ca', '#957fb8', '#c34043', '#76946a'] },
+  { name: 'Everforest', desc: '🌲 Green forest', colors: ['#83c120', '#d699b6', '#e67e80', '#a7c080'] },
+  { name: 'Cyberpunk', desc: '💜 Neon future', colors: ['#00ffff', '#ff00ff', '#ff003c', '#00ff64'] },
+];
+
+const features = [
+  { icon: '🎨', title: 'Beautiful TUI', desc: 'Clean three-panel interface with rounded borders and smooth navigation' },
+  { icon: '🔍', title: 'Feed Discovery', desc: 'Auto-detect RSS/Atom feeds from any URL — just paste a website' },
+  { icon: '📴', title: 'Offline Mode', desc: 'Articles cached locally — read without internet, read states persist' },
+  { icon: '📁', title: 'Smart Folders', desc: 'Organize feeds into collapsible folders with custom emoji icons' },
+  { icon: '🔎', title: 'Instant Search', desc: 'Find articles across all feeds with real-time filtering' },
+  { icon: '🎭', title: '15 Themes', desc: 'Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, and more' },
+  { icon: '📥', title: 'OPML Support', desc: 'Import/export subscriptions for easy migration from other readers' },
+  { icon: '⚡', title: 'Blazingly Fast', desc: 'Async feed fetching with Tokio — no UI blocking ever' },
+  { icon: '🦀', title: 'Memory Safe', desc: 'Written in 100% safe Rust with zero unsafe code' },
+  { icon: '🌍', title: 'Cross-Platform', desc: 'Linux, macOS, Windows — same experience everywhere' },
+];
+
+const screenshots = [
+  { 
+    src: '/screenshots/feedo-main.png', 
+    title: 'Beautiful Three-Panel Layout', 
+    desc: 'Navigate your feeds, articles, and content with a clean, intuitive interface. The Dracula theme shown here is one of 15 available themes.' 
+  },
+  { 
+    src: '/screenshots/feedo-search.png', 
+    title: 'Real-Time Search', 
+    desc: 'Find any article instantly across all your feeds with fuzzy matching and highlighted results.' 
+  },
+  { 
+    src: '/screenshots/feedo-add-feed.png', 
+    title: 'Smart Feed Discovery', 
+    desc: 'Just paste any URL and Feedo will automatically find the RSS/Atom feed. No more hunting for feed links!' 
+  },
+];
+
+const keybindings = {
+  navigation: [
+    { keys: ['j', '↓'], action: 'Move down' },
+    { keys: ['k', '↑'], action: 'Move up' },
+    { keys: ['l', '→', 'Enter'], action: 'Select / Enter' },
+    { keys: ['h', '←'], action: 'Go back' },
+    { keys: ['g'], action: 'Jump to top' },
+    { keys: ['G'], action: 'Jump to bottom' },
+    { keys: ['Tab'], action: 'Switch panels' },
+  ],
+  actions: [
+    { keys: ['n'], action: 'Add new feed' },
+    { keys: ['d', 'Del'], action: 'Delete feed' },
+    { keys: ['r'], action: 'Refresh all' },
+    { keys: ['o'], action: 'Open in browser' },
+    { keys: ['Space'], action: 'Toggle read' },
+    { keys: ['a'], action: 'Mark all read' },
+    { keys: ['/'], action: 'Search' },
+    { keys: ['t'], action: 'Theme picker' },
+    { keys: ['q', 'Esc'], action: 'Quit' },
+  ],
+};
+---
+
+<Layout title="Feedo - Terminal RSS Reader">
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <pre class="ascii-logo">
+      ██████╗██████╗██████╗██████╗  ██████╗
+      ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗
+      █████╗ █████╗ █████╗ ██║  ██║██║   ██║
+      ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║
+      ██║    ██████╗██████╗██████╔╝╚██████╔╝
+      ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝ 
+      </pre>
+      
+      <div class="mascot">(◕ᴥ◕)</div>
+      
+      <p class="tagline">
+        Your <strong>terminal RSS companion</strong><br>
+        A beautiful, fast, and modern RSS reader built with Rust
+      </p>
+      
+      <div class="btn-group">
+        <a href="#installation" class="btn btn-primary">
+          <span>🚀</span> Get Started
+        </a>
+        <a href="https://github.com/ricardodantas/feedo" class="btn btn-secondary" target="_blank" rel="noopener">
+          <span>⭐</span> Star on GitHub
+        </a>
+        <a href="https://github.com/ricardodantas/feedo#readme" class="btn btn-tertiary" target="_blank" rel="noopener">
+          <span>📖</span> Documentation
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>✨ Features</h2>
+        <p>Everything you need in an RSS reader, nothing you don't</p>
+      </div>
+      
+      <div class="features-grid">
+        {features.map((feature) => (
+          <div class="feature-card">
+            <div class="feature-icon">{feature.icon}</div>
+            <h3>{feature.title}</h3>
+            <p>{feature.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenshots Section -->
+  <section class="screenshots-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>📸 Screenshots</h2>
+        <p>See Feedo in action</p>
+      </div>
+      
+      <div class="screenshot-showcase">
+        {screenshots.map((screenshot) => (
+          <div class="screenshot-item">
+            <div class="screenshot-image">
+              <img src={screenshot.src} alt={screenshot.title} loading="lazy" />
+            </div>
+            <div class="screenshot-info">
+              <h3>{screenshot.title}</h3>
+              <p>{screenshot.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Installation Section -->
+  <section id="installation" class="installation-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>🚀 Installation</h2>
+        <p>Get up and running in seconds</p>
+      </div>
+      
+      <div class="install-methods">
+        <div class="install-card">
+          <h3><span>🍺</span> Homebrew</h3>
+          <pre><code>brew install ricardodantas/tap/feedo</code></pre>
+          <p class="install-note">Works on macOS and Linux</p>
+        </div>
+        
+        <div class="install-card">
+          <h3><span>📦</span> Cargo</h3>
+          <pre><code>cargo install feedo</code></pre>
+          <p class="install-note">Requires Rust toolchain</p>
+        </div>
+        
+        <div class="install-card">
+          <h3><span>⬇️</span> Pre-built Binaries</h3>
+          <pre><code># Download from GitHub Releases
+# Available for Linux, macOS, Windows</code></pre>
+          <p class="install-note">
+            <a href="https://github.com/ricardodantas/feedo/releases" target="_blank" rel="noopener">
+              View releases →
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keybindings Section -->
+  <section class="keybindings-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>⌨️ Keyboard-Driven</h2>
+        <p>Vim-style keybindings for lightning-fast navigation</p>
+      </div>
+      
+      <div class="keybindings-grid">
+        <div class="keybindings-group">
+          <h3>Navigation</h3>
+          {keybindings.navigation.map((binding) => (
+            <div class="keybinding-item">
+              <div class="keybinding-key">
+                {binding.keys.map((key) => (
+                  <span class="key">{key}</span>
+                ))}
+              </div>
+              <span class="keybinding-action">{binding.action}</span>
+            </div>
+          ))}
+        </div>
+        
+        <div class="keybindings-group">
+          <h3>Actions</h3>
+          {keybindings.actions.map((binding) => (
+            <div class="keybinding-item">
+              <div class="keybinding-key">
+                {binding.keys.map((key) => (
+                  <span class="key">{key}</span>
+                ))}
+              </div>
+              <span class="keybinding-action">{binding.action}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Themes Section -->
+  <section class="themes-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>🎭 15 Beautiful Themes</h2>
+        <p>Press <code>t</code> to open the theme picker with live preview</p>
+      </div>
+      
+      <div class="themes-grid">
+        {themes.map((theme) => (
+          <div class="theme-card">
+            <div class="theme-preview">
+              {theme.colors.map((color) => (
+                <div class="theme-color" style={`background-color: ${color}`}></div>
+              ))}
+            </div>
+            <div class="theme-name">{theme.name}</div>
+            <div class="theme-desc">{theme.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-mascot">(◕ᴥ◕)</div>
+      <div class="footer-links">
+        <a href="https://github.com/ricardodantas/feedo" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/ricardodantas/feedo#readme" target="_blank" rel="noopener">Documentation</a>
+        <a href="https://github.com/ricardodantas/feedo/releases" target="_blank" rel="noopener">Releases</a>
+        <a href="https://github.com/ricardodantas/feedo/issues" target="_blank" rel="noopener">Issues</a>
+      </div>
+      <p class="footer-credits">
+        Made with ❤️ and 🦀 by <a href="https://github.com/ricardodantas" target="_blank" rel="noopener">Ricardo Dantas</a>
+      </p>
+    </div>
+  </footer>
+</Layout>
