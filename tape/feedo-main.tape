@@ -3,16 +3,17 @@ Output website/public/screenshots/feedo-main.png
 
 Set Width 1200
 Set Height 700
-Set FontSize 16
-Set FontFamily "JetBrains Mono"
+Set FontSize 14
+Set FontFamily "monospace"
 Set Theme "Dracula"
-Set Padding 20
+Set Padding 10
 Set WindowBar Colorful
 Set WindowBarSize 40
 Set TypingSpeed 0
+Set LetterSpacing 0
 
 Hide
-Type "cd ~/dev/feedo && clear"
+Type "clear"
 Enter
 Sleep 500ms
 Show
