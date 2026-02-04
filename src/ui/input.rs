@@ -87,8 +87,8 @@ impl App {
 
     async fn handle_normal_key(&mut self, key: KeyCode) -> KeyResult {
         match key {
-            // Quit
-            KeyCode::Char('q') | KeyCode::Esc => return KeyResult::Quit,
+            // Quit (only 'q' - Ctrl+c is handled by the terminal)
+            KeyCode::Char('q') => return KeyResult::Quit,
 
             // Search
             KeyCode::Char('/') => {
