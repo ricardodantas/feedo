@@ -251,7 +251,8 @@ impl App {
                 // Truncate title to fit
                 let max_width = area.width.saturating_sub(6) as usize;
                 let title = if item.title.len() > max_width {
-                    format!("{}…", &item.title[..max_width.saturating_sub(1)])
+		    let s: String = item.title.chars().take(max_width-1).collect();
+                    format!("{s}…")
                 } else {
                     item.title.clone()
                 };
