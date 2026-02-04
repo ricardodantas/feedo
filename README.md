@@ -184,9 +184,8 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `a` | Mark all as read (selected feed) |
 | `/` | Open search |
 | `t` | Open theme picker |
-| `F1` | Show keyboard shortcuts |
-| `?` | About |
-| `q` / `Esc` | Quit |
+| `?` / `F1` | Show keyboard shortcuts |
+| `q` | Quit |
 
 ### Share Mode
 

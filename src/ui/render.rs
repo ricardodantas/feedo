@@ -355,7 +355,7 @@ impl App {
         } else {
             Span::styled(
                 format!(
-                    "{sync_indicator} n add │ d delete │ r refresh │ / search │ s share │ a mark read │ t theme │ F1 help │ q quit"
+                    "{sync_indicator} n add │ d delete │ r refresh │ / search │ s share │ a mark read │ t theme │ ? help │ q quit"
                 ),
                 Style::default().fg(muted),
             )
@@ -1186,17 +1186,10 @@ impl App {
             ]),
             Line::from(vec![
                 Span::styled("  [", bracket_style),
-                Span::styled("F1", key_style),
-                Span::styled("]", bracket_style),
-                Span::raw("   "),
-                Span::styled("This help", desc_style),
-            ]),
-            Line::from(vec![
-                Span::styled("  [", bracket_style),
                 Span::styled("?", key_style),
                 Span::styled("]", bracket_style),
                 Span::raw("    "),
-                Span::styled("About Feedo", desc_style),
+                Span::styled("This help", desc_style),
             ]),
             Line::from(vec![
                 Span::styled("  [", bracket_style),
@@ -1217,7 +1210,7 @@ impl App {
             Span::styled("  Press ", Style::default().fg(muted)),
             Span::styled("Esc", Style::default().fg(accent).bold()),
             Span::styled(" or ", Style::default().fg(muted)),
-            Span::styled("F1", Style::default().fg(accent).bold()),
+            Span::styled("?", Style::default().fg(accent).bold()),
             Span::styled(" to close", Style::default().fg(muted)),
             Span::styled("  │  ", Style::default().fg(muted)),
             Span::styled("vim-style navigation", Style::default().fg(muted).italic()),
