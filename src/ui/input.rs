@@ -149,6 +149,11 @@ impl App {
             // Delete feed
             KeyCode::Char('d') | KeyCode::Delete => self.delete_selected_feed(),
 
+            // About dialog
+            KeyCode::Char('A') => {
+                self.ui.mode = super::Mode::About;
+            }
+
             // Help/hotkeys dialog
             KeyCode::Char('?') | KeyCode::F(1) => {
                 self.ui.mode = super::Mode::Help;

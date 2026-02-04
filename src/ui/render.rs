@@ -355,7 +355,7 @@ impl App {
         } else {
             Span::styled(
                 format!(
-                    "{sync_indicator} n add │ d delete │ r refresh │ / search │ s share │ a mark read │ t theme │ ? help │ q quit"
+                    "{sync_indicator} n add │ d delete │ r refresh │ / search │ s share │ t theme │ ? help │ A about │ q quit"
                 ),
                 Style::default().fg(muted),
             )
@@ -1190,6 +1190,13 @@ impl App {
                 Span::styled("]", bracket_style),
                 Span::raw("    "),
                 Span::styled("This help", desc_style),
+            ]),
+            Line::from(vec![
+                Span::styled("  [", bracket_style),
+                Span::styled("A", key_style),
+                Span::styled("]", bracket_style),
+                Span::raw("    "),
+                Span::styled("About Feedo", desc_style),
             ]),
             Line::from(vec![
                 Span::styled("  [", bracket_style),

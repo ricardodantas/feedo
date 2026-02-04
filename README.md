@@ -185,6 +185,7 @@ Feel free to modify `~/.config/feedo/config.json` to add your own!
 | `/` | Open search |
 | `t` | Open theme picker |
 | `?` / `F1` | Show keyboard shortcuts |
+| `A` | About Feedo |
 | `q` | Quit |
 
 ### Share Mode
