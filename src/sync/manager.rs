@@ -68,14 +68,28 @@ impl SyncManager {
             .collect();
 
         // Group subscriptions by category
-        let mut by_category: HashMap<String, Vec<(String, String)>> = HashMap::new();
-        let mut root_feeds: Vec<(String, String)> = Vec::new();
+        let mut by_category: HashMap<String, Vec<(String, String, String)>> = HashMap::new();
+        let mut root_feeds: Vec<(String, String, String)> = Vec::new();
 
         for sub in &subs {
             let feed_url = sub.url.clone();
             let feed_name = sub.title.clone();
+            let sync_id = sub.id.clone();
 
             if existing_urls.contains(&feed_url) {
+                // Update sync_id for existing feeds
+                for folder in &mut config.folders {
+                    for feed in &mut folder.feeds {
+                        if feed.url == feed_url && feed.sync_id.is_none() {
+                            feed.sync_id = Some(sync_id.clone());
+                        }
+                    }
+                }
+                for feed in &mut config.feeds {
+                    if feed.url == feed_url && feed.sync_id.is_none() {
+                        feed.sync_id = Some(sync_id.clone());
+                    }
+                }
                 result.feeds_existing += 1;
                 continue;
             }
@@ -84,9 +98,9 @@ impl SyncManager {
                 by_category
                     .entry(cat.label.clone())
                     .or_default()
-                    .push((feed_url, feed_name));
+                    .push((feed_url, feed_name, sync_id));
             } else {
-                root_feeds.push((feed_url, feed_name));
+                root_feeds.push((feed_url, feed_name, sync_id));
             }
         }
 
@@ -99,16 +113,16 @@ impl SyncManager {
                 .find(|f| f.name.eq_ignore_ascii_case(&category));
 
             if let Some(folder) = folder {
-                for (url, name) in feeds {
-                    folder.feeds.push(FeedConfig { name, url });
+                for (url, name, sync_id) in feeds {
+                    folder.feeds.push(FeedConfig { name, url, sync_id: Some(sync_id) });
                     result.feeds_imported += 1;
                 }
             } else {
                 let new_feeds: Vec<FeedConfig> = feeds
                     .into_iter()
-                    .map(|(url, name)| {
+                    .map(|(url, name, sync_id)| {
                         result.feeds_imported += 1;
-                        FeedConfig { name, url }
+                        FeedConfig { name, url, sync_id: Some(sync_id) }
                     })
                     .collect();
 
@@ -122,8 +136,8 @@ impl SyncManager {
         }
 
         // Add root feeds
-        for (url, name) in root_feeds {
-            config.feeds.push(FeedConfig { name, url });
+        for (url, name, sync_id) in root_feeds {
+            config.feeds.push(FeedConfig { name, url, sync_id: Some(sync_id) });
             result.feeds_imported += 1;
         }
 

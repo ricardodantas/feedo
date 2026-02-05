@@ -58,6 +58,10 @@ pub struct FeedConfig {
 
     /// Feed URL (RSS/Atom).
     pub url: String,
+
+    /// Sync ID from server (e.g., "feed/123" for Google Reader API).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sync_id: Option<String>,
 }
 
 const fn default_true() -> bool {
@@ -80,10 +84,12 @@ impl Default for Config {
                         FeedConfig {
                             name: "Hacker News".to_string(),
                             url: "https://hnrss.org/frontpage".to_string(),
+                            sync_id: None,
                         },
                         FeedConfig {
                             name: "Lobsters".to_string(),
                             url: "https://lobste.rs/rss".to_string(),
+                            sync_id: None,
                         },
                     ],
                 },
@@ -94,6 +100,7 @@ impl Default for Config {
                     feeds: vec![FeedConfig {
                         name: "BBC World".to_string(),
                         url: "https://feeds.bbci.co.uk/news/world/rss.xml".to_string(),
+                        sync_id: None,
                     }],
                 },
             ],

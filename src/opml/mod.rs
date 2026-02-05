@@ -30,6 +30,7 @@ pub fn import(path: &Path, config: &mut Config) -> Result<usize> {
             config.feeds.push(FeedConfig {
                 name: outline.title.clone(),
                 url: url.clone(),
+                sync_id: None,
             });
             imported += 1;
         } else if !outline.children.is_empty() {
@@ -41,6 +42,7 @@ pub fn import(path: &Path, config: &mut Config) -> Result<usize> {
                     child.xml_url.as_ref().map(|url| FeedConfig {
                         name: child.title.clone(),
                         url: url.clone(),
+                        sync_id: None,
                     })
                 })
                 .collect();

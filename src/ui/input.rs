@@ -447,6 +447,7 @@ impl App {
         let feed_config = FeedConfig {
             name: name.clone(),
             url: url.clone(),
+            sync_id: None,
         };
 
         // Add to folder if one is selected, otherwise add to root feeds
@@ -615,11 +616,20 @@ impl App {
             }
         };
 
+        // Find the sync_id from config
+        let sync_id = self.config.folders
+            .iter()
+            .flat_map(|f| f.feeds.iter())
+            .chain(self.config.feeds.iter())
+            .find(|f| f.url == feed_url)
+            .and_then(|f| f.sync_id.clone());
+
         // Try to delete from remote sync server if configured
         if self.ui.sync_enabled {
             if let Some(sync) = &self.config.sync {
                 if let Some(password) = &sync.password {
-                    let feed_id = format!("feed/{}", feed_url);
+                    // Use sync_id if available, otherwise fall back to feed/{url}
+                    let feed_id = sync_id.clone().unwrap_or_else(|| format!("feed/{}", feed_url));
                     match crate::sync::SyncManager::connect(&sync.server, &sync.username, password)
                         .await
                     {
@@ -676,28 +686,27 @@ impl App {
     /// Delete a folder and all its feeds.
     #[allow(clippy::map_unwrap_or)]
     async fn perform_delete_folder(&mut self, folder_idx: usize) {
-        // Get the folder info
-        let (folder_name, feed_urls): (String, Vec<String>) = self
+        // Get the folder info including sync_ids
+        let (folder_name, feed_sync_ids): (String, Vec<Option<String>>) = self
             .config
             .folders
             .get(folder_idx)
-            .map(|f| (f.name.clone(), f.feeds.iter().map(|feed| feed.url.clone()).collect()))
+            .map(|f| (f.name.clone(), f.feeds.iter().map(|feed| feed.sync_id.clone()).collect()))
             .unwrap_or_default();
 
-        let feed_count = feed_urls.len();
+        let feed_count = feed_sync_ids.len();
 
         // Try to delete feeds from remote sync server if configured
-        if self.ui.sync_enabled && !feed_urls.is_empty() {
+        if self.ui.sync_enabled && !feed_sync_ids.is_empty() {
             if let Some(sync) = &self.config.sync {
                 if let Some(password) = &sync.password {
                     match crate::sync::SyncManager::connect(&sync.server, &sync.username, password)
                         .await
                     {
                         Ok(manager) => {
-                            for feed_url in &feed_urls {
-                                let feed_id = format!("feed/{}", feed_url);
-                                if let Err(e) = manager.client().remove_subscription(manager.auth(), &feed_id).await {
-                                    tracing::warn!("Failed to remove feed {} from sync server: {}", feed_url, e);
+                            for sync_id in feed_sync_ids.iter().flatten() {
+                                if let Err(e) = manager.client().remove_subscription(manager.auth(), sync_id).await {
+                                    tracing::warn!("Failed to remove feed {} from sync server: {}", sync_id, e);
                                 }
                             }
                         }
