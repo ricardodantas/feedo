@@ -281,24 +281,28 @@ pub struct SyncConfig {
     pub provider: SyncProvider,
     /// Server URL (e.g., "https://freshrss.example.com/api/greader.php").
     pub server: String,
-    /// Username.
-    pub username: String,
-    /// Password or API key (fallback if keychain unavailable).
+    /// Username (fallback if encrypted storage unavailable).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub username: Option<String>,
+    /// Password or API key (fallback if encrypted storage unavailable).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
 }
 
 impl SyncConfig {
-    /// Get the password, trying keychain first then config fallback.
+    /// Get credentials (username, password) from encrypted storage or config fallback.
     #[must_use]
-    pub fn get_password(&self) -> Option<String> {
-        // Try keychain first
-        let keychain_key = format!("{}@{}", self.username, self.server);
-        if let Some(password) = crate::credentials::get_password(&keychain_key) {
-            return Some(password);
+    pub fn get_credentials(&self) -> Option<(String, String)> {
+        // Try encrypted storage first
+        let credential_key = format!("sync@{}", self.server);
+        if let Some(creds) = crate::credentials::get_credentials(&credential_key) {
+            return Some(creds);
         }
         // Fall back to config file
-        self.password.clone()
+        match (&self.username, &self.password) {
+            (Some(u), Some(p)) => Some((u.clone(), p.clone())),
+            _ => None,
+        }
     }
 }
 

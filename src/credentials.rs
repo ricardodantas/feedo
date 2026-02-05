@@ -1,19 +1,32 @@
 //! Secure credential storage using AES-256-GCM encryption.
 //!
-//! Passwords are encrypted and stored in ~/.config/feedo/.credentials
+//! Credentials (username + password) are encrypted and stored in ~/.config/feedo/.credentials
 
 use aes_gcm::{
     aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use tracing::debug;
 
-/// Store a password securely (encrypted).
-pub fn store_password(username: &str, password: &str) -> Result<(), String> {
+/// Encrypted credentials for a service.
+#[derive(Debug, Serialize, Deserialize)]
+struct EncryptedCredentials {
+    username: String,
+    password: String,
+}
+
+/// Store credentials securely (both username and password encrypted).
+/// 
+/// # Arguments
+/// * `key` - Unique key for this credential (e.g., "sync@server.com")
+/// * `username` - The username to store
+/// * `password` - The password to store
+pub fn store_credentials(key: &str, username: &str, password: &str) -> Result<(), String> {
     let path = credentials_file().ok_or("Cannot determine credentials path")?;
     
     // Load existing credentials or create new
@@ -24,19 +37,24 @@ pub fn store_password(username: &str, password: &str) -> Result<(), String> {
         HashMap::new()
     };
     
-    // Encrypt the password
-    let key = derive_key();
-    let cipher = Aes256Gcm::new_from_slice(&key).map_err(|e| e.to_string())?;
+    // Create credentials object
+    let credentials = EncryptedCredentials {
+        username: username.to_string(),
+        password: password.to_string(),
+    };
+    let plaintext = serde_json::to_string(&credentials).map_err(|e| e.to_string())?;
     
-    // Use username hash as nonce (12 bytes)
-    let nonce = make_nonce(username);
+    // Encrypt
+    let encryption_key = derive_key();
+    let cipher = Aes256Gcm::new_from_slice(&encryption_key).map_err(|e| e.to_string())?;
+    let nonce = make_nonce(key);
     
     let encrypted = cipher
-        .encrypt(Nonce::from_slice(&nonce), password.as_bytes())
+        .encrypt(Nonce::from_slice(&nonce), plaintext.as_bytes())
         .map_err(|e| format!("Encryption failed: {e}"))?;
     
     let encoded = BASE64.encode(&encrypted);
-    creds.insert(username.to_string(), encoded);
+    creds.insert(key.to_string(), encoded);
     
     // Ensure directory exists
     if let Some(parent) = path.parent() {
@@ -55,12 +73,18 @@ pub fn store_password(username: &str, password: &str) -> Result<(), String> {
         let _ = fs::set_permissions(&path, perms);
     }
     
-    debug!("Stored encrypted password for: {username}");
+    debug!("Stored encrypted credentials for: {key}");
     Ok(())
 }
 
-/// Retrieve a password (decrypted).
-pub fn get_password(username: &str) -> Option<String> {
+/// Retrieve credentials (decrypted username and password).
+/// 
+/// # Arguments
+/// * `key` - Unique key for this credential
+/// 
+/// # Returns
+/// Tuple of (username, password) if found, None otherwise.
+pub fn get_credentials(key: &str) -> Option<(String, String)> {
     let path = credentials_file()?;
     if !path.exists() {
         return None;
@@ -69,22 +93,23 @@ pub fn get_password(username: &str) -> Option<String> {
     let content = fs::read_to_string(&path).ok()?;
     let creds: HashMap<String, String> = serde_json::from_str(&content).ok()?;
     
-    let encoded = creds.get(username)?;
+    let encoded = creds.get(key)?;
     let encrypted = BASE64.decode(encoded).ok()?;
     
-    let key = derive_key();
-    let cipher = Aes256Gcm::new_from_slice(&key).ok()?;
-    let nonce = make_nonce(username);
+    let encryption_key = derive_key();
+    let cipher = Aes256Gcm::new_from_slice(&encryption_key).ok()?;
+    let nonce = make_nonce(key);
     
     let decrypted = cipher.decrypt(Nonce::from_slice(&nonce), encrypted.as_ref()).ok()?;
-    let password = String::from_utf8(decrypted).ok()?;
+    let plaintext = String::from_utf8(decrypted).ok()?;
+    let credentials: EncryptedCredentials = serde_json::from_str(&plaintext).ok()?;
     
-    debug!("Retrieved encrypted password for: {username}");
-    Some(password)
+    debug!("Retrieved encrypted credentials for: {key}");
+    Some((credentials.username, credentials.password))
 }
 
-/// Delete a stored password.
-pub fn delete_password(username: &str) -> Result<(), String> {
+/// Delete stored credentials.
+pub fn delete_credentials(key: &str) -> Result<(), String> {
     let path = credentials_file().ok_or("Cannot determine credentials path")?;
     if !path.exists() {
         return Ok(());
@@ -93,12 +118,25 @@ pub fn delete_password(username: &str) -> Result<(), String> {
     let content = fs::read_to_string(&path).map_err(|e| e.to_string())?;
     let mut creds: HashMap<String, String> = serde_json::from_str(&content).unwrap_or_default();
     
-    creds.remove(username);
+    creds.remove(key);
     
     let content = serde_json::to_string(&creds).map_err(|e| e.to_string())?;
     fs::write(&path, &content).map_err(|e| e.to_string())?;
     
     Ok(())
+}
+
+// Legacy compatibility - keep old API working
+pub fn store_password(key: &str, password: &str) -> Result<(), String> {
+    store_credentials(key, key, password)
+}
+
+pub fn get_password(key: &str) -> Option<String> {
+    get_credentials(key).map(|(_, password)| password)
+}
+
+pub fn delete_password(key: &str) -> Result<(), String> {
+    delete_credentials(key)
 }
 
 fn credentials_file() -> Option<PathBuf> {
@@ -112,7 +150,6 @@ fn derive_key() -> [u8; 32] {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     
-    // Derive key from machine-specific data
     let mut hasher = DefaultHasher::new();
     
     if let Ok(user) = std::env::var("USER").or_else(|_| std::env::var("USERNAME")) {
@@ -129,7 +166,6 @@ fn derive_key() -> [u8; 32] {
     "feedo-credential-salt-v2".hash(&mut hasher2);
     let hash2 = hasher2.finish();
     
-    // Combine into 32 bytes
     let mut key = [0u8; 32];
     key[0..8].copy_from_slice(&hash1.to_le_bytes());
     key[8..16].copy_from_slice(&hash2.to_le_bytes());
@@ -138,13 +174,13 @@ fn derive_key() -> [u8; 32] {
     key
 }
 
-fn make_nonce(username: &str) -> [u8; 12] {
+fn make_nonce(input: &str) -> [u8; 12] {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     
     let mut nonce = [0u8; 12];
     let mut h = DefaultHasher::new();
-    username.hash(&mut h);
+    input.hash(&mut h);
     nonce[0..8].copy_from_slice(&h.finish().to_le_bytes());
     nonce
 }
@@ -154,15 +190,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_roundtrip() {
-        let username = "test_roundtrip_user";
+    fn test_credentials_roundtrip() {
+        let key = "test_creds_key";
+        let username = "test_user";
         let password = "test_password_123!@#";
         
-        store_password(username, password).expect("Store failed");
-        let retrieved = get_password(username);
-        assert_eq!(retrieved, Some(password.to_string()));
+        store_credentials(key, username, password).expect("Store failed");
+        let retrieved = get_credentials(key);
+        assert_eq!(retrieved, Some((username.to_string(), password.to_string())));
         
-        let _ = delete_password(username);
+        let _ = delete_credentials(key);
     }
     
     #[test]

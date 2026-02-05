@@ -245,23 +245,23 @@ async fn sync_login(
     let subs = client.subscriptions(&auth).await?;
     println!("✓ Found {} subscriptions", subs.len());
 
-    // Store password securely (encrypted)
-    let credential_key = format!("{}@{}", username, server);
-    match feedo::credentials::store_password(&credential_key, password) {
-        Ok(()) => println!("✓ Password encrypted and stored"),
+    // Store credentials securely (both username and password encrypted)
+    let credential_key = format!("sync@{}", server);
+    match feedo::credentials::store_credentials(&credential_key, username, password) {
+        Ok(()) => println!("✓ Credentials encrypted and stored"),
         Err(e) => {
-            println!("⚠ Could not store password: {e}");
-            println!("  Password will be stored in config file (not recommended)");
+            println!("⚠ Could not store credentials: {e}");
+            println!("  Credentials will be stored in config file (not recommended)");
         }
     }
 
-    // Save to config (password only stored if encryption failed)
+    // Save to config (credentials only stored if encryption failed)
     let mut config = Config::load()?;
-    let encrypted_ok = feedo::credentials::get_password(&credential_key).is_some();
+    let encrypted_ok = feedo::credentials::get_credentials(&credential_key).is_some();
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
-        username: username.to_string(),
+        username: if encrypted_ok { None } else { Some(username.to_string()) },
         password: if encrypted_ok { None } else { Some(password.to_string()) },
     });
     config.save()?;
@@ -270,15 +270,18 @@ async fn sync_login(
     Ok(())
 }
 
-/// Get sync password from encrypted storage or config fallback.
-fn get_sync_password(sync: &SyncConfig) -> Option<String> {
+/// Get sync credentials from encrypted storage or config fallback.
+fn get_sync_credentials(sync: &SyncConfig) -> Option<(String, String)> {
     // Try encrypted storage first
-    let credential_key = format!("{}@{}", sync.username, sync.server);
-    if let Some(password) = feedo::credentials::get_password(&credential_key) {
-        return Some(password);
+    let credential_key = format!("sync@{}", sync.server);
+    if let Some(creds) = feedo::credentials::get_credentials(&credential_key) {
+        return Some(creds);
     }
     // Fall back to config file
-    sync.password.clone()
+    match (&sync.username, &sync.password) {
+        (Some(u), Some(p)) => Some((u.clone(), p.clone())),
+        _ => None,
+    }
 }
 
 async fn sync_status() -> Result<()> {
@@ -288,12 +291,15 @@ async fn sync_status() -> Result<()> {
         println!("(◕ᴥ◕) Sync Configuration\n");
         println!("  Provider: {:?}", sync.provider);
         println!("  Server:   {}", sync.server);
-        println!("  Username: {}", sync.username);
         
-        let credential_key = format!("{}@{}", sync.username, sync.server);
-        let from_encrypted = feedo::credentials::get_password(&credential_key).is_some();
-        let from_config = sync.password.is_some();
-        let password = get_sync_password(sync);
+        let credential_key = format!("sync@{}", sync.server);
+        let from_encrypted = feedo::credentials::get_credentials(&credential_key).is_some();
+        let from_config = sync.username.is_some() && sync.password.is_some();
+        let credentials = get_sync_credentials(sync);
+        
+        if let Some((username, _)) = &credentials {
+            println!("  Username: {}", username);
+        }
         
         let storage_info = if from_encrypted {
             "**** (encrypted)"
@@ -305,10 +311,10 @@ async fn sync_status() -> Result<()> {
         println!("  Password: {}", storage_info);
 
         // Try to connect and show stats
-        if let Some(password) = password {
+        if let Some((username, password)) = credentials {
             println!("\nTesting connection...");
             let client = GReaderClient::new(&sync.server);
-            match client.login(&sync.username, &password).await {
+            match client.login(&username, &password).await {
                 Ok(auth) => {
                     println!("✓ Connection successful");
                     if let Ok(subs) = client.subscriptions(&auth).await {
@@ -343,8 +349,8 @@ async fn sync_feeds() -> Result<()> {
         color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first.")
     })?;
 
-    let password = get_sync_password(&sync).ok_or_else(|| {
-        color_eyre::eyre::eyre!("No password stored. Run 'feedo sync login' again.")
+    let (username, password) = get_sync_credentials(&sync).ok_or_else(|| {
+        color_eyre::eyre::eyre!("No credentials stored. Run 'feedo sync login' again.")
     })?;
 
     println!("(◕ᴥ◕) Syncing with {}...\n", sync.server);
@@ -353,7 +359,7 @@ async fn sync_feeds() -> Result<()> {
     let mut cache = feedo::FeedCache::load()?;
 
     // Connect and run full sync
-    let manager = feedo::SyncManager::connect(&sync.server, &sync.username, &password).await?;
+    let manager = feedo::SyncManager::connect(&sync.server, &username, &password).await?;
     let result = manager.full_sync(&mut config, &mut cache).await?;
 
     // Save changes
