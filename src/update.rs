@@ -177,3 +177,47 @@ pub fn run_update(pm: &PackageManager) -> Result<(), String> {
         Err(e) => Err(format!("Failed to run {cmd}: {e}")),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_version_is_newer() {
+        assert!(version_is_newer("1.2.0", "1.1.0"));
+        assert!(version_is_newer("1.1.1", "1.1.0"));
+        assert!(version_is_newer("2.0.0", "1.9.9"));
+        assert!(!version_is_newer("1.1.0", "1.1.0"));
+        assert!(!version_is_newer("1.0.0", "1.1.0"));
+        assert!(!version_is_newer("0.9.0", "1.0.0"));
+    }
+
+    #[test]
+    fn test_detect_package_manager() {
+        // Should default to cargo on this system
+        let pm = detect_package_manager();
+        // Just verify it doesn't panic and returns something
+        assert!(!pm.name().is_empty());
+        assert!(!pm.update_command().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_check_for_updates_does_not_panic() {
+        // This actually hits the GitHub API, but with a short timeout
+        let result = check_for_updates_timeout(std::time::Duration::from_secs(5)).await;
+        // Should either succeed or fail gracefully, not panic
+        match result {
+            VersionCheck::UpdateAvailable { latest, current } => {
+                assert!(!latest.is_empty());
+                assert!(!current.is_empty());
+            }
+            VersionCheck::UpToDate => {
+                // That's fine too
+            }
+            VersionCheck::CheckFailed(msg) => {
+                // Network issues are acceptable in tests
+                assert!(!msg.is_empty());
+            }
+        }
+    }
+}
