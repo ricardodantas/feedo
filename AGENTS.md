@@ -6,6 +6,7 @@ This file helps AI agents understand and contribute to the Feedo codebase effect
 
 **Feedo** is a terminal RSS reader built with Rust and ratatui. Think Reeder for the command line.
 
+
 ```
 feedo/
 ├── src/
@@ -144,6 +145,10 @@ Ensure terminal supports Unicode. Try: `echo "◕ᴥ◕"`
 
 ### Feed not parsing
 Check if it's valid RSS/Atom. Some sites serve HTML at feed URLs.
+
+## The website's URL
+
+https://feedo.ricardodantas.me
 
 ## Resources
 
