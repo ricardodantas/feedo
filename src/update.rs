@@ -157,24 +157,51 @@ fn version_is_newer(latest: &str, current: &str) -> bool {
 ///
 /// Returns an error message if the update fails.
 pub fn run_update(pm: &PackageManager) -> Result<(), String> {
-    let (cmd, args): (&str, Vec<String>) = match pm {
-        PackageManager::Cargo => ("cargo", vec!["install".to_string(), "feedo".to_string()]),
-        PackageManager::Homebrew { formula } => {
-            ("brew", vec!["upgrade".to_string(), formula.clone()])
+    match pm {
+        PackageManager::Cargo => {
+            match std::process::Command::new("cargo")
+                .args(["install", "feedo"])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+            {
+                Ok(status) if status.success() => Ok(()),
+                Ok(status) => Err(format!("Update failed with status: {status}")),
+                Err(e) => Err(format!("Failed to run cargo: {e}")),
+            }
         }
-    };
+        PackageManager::Homebrew { formula } => {
+            // First update the tap to get latest formula
+            let _ = std::process::Command::new("brew")
+                .args(["update"])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
 
-    let args_ref: Vec<&str> = args.iter().map(String::as_str).collect();
-
-    match std::process::Command::new(cmd)
-        .args(&args_ref)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-    {
-        Ok(status) if status.success() => Ok(()),
-        Ok(status) => Err(format!("Update failed with status: {status}")),
-        Err(e) => Err(format!("Failed to run {cmd}: {e}")),
+            // Then upgrade the formula
+            match std::process::Command::new("brew")
+                .args(["upgrade", formula])
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status()
+            {
+                Ok(status) if status.success() => Ok(()),
+                Ok(_) => {
+                    // upgrade returns non-zero if already up to date, try reinstall
+                    match std::process::Command::new("brew")
+                        .args(["reinstall", formula])
+                        .stdout(Stdio::null())
+                        .stderr(Stdio::null())
+                        .status()
+                    {
+                        Ok(status) if status.success() => Ok(()),
+                        Ok(status) => Err(format!("Update failed with status: {status}")),
+                        Err(e) => Err(format!("Failed to run brew: {e}")),
+                    }
+                }
+                Err(e) => Err(format!("Failed to run brew: {e}")),
+            }
+        }
     }
 }
 
