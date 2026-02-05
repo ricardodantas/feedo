@@ -276,10 +276,14 @@ impl App {
                     Style::default()
                 };
 
-                // Truncate title to fit
+                // Truncate title to fit (use chars() for Unicode safety)
                 let max_width = area.width.saturating_sub(6) as usize;
-                let title = if item.title.len() > max_width {
-                    format!("{}…", &item.title[..max_width.saturating_sub(1)])
+                let title: String = if item.title.chars().count() > max_width {
+                    item.title
+                        .chars()
+                        .take(max_width.saturating_sub(1))
+                        .chain(std::iter::once('…'))
+                        .collect()
                 } else {
                     item.title.clone()
                 };
@@ -841,10 +845,14 @@ impl App {
             .as_ref()
             .map_or(("Unknown error", None), |(e, c)| (e.as_str(), c.as_deref()));
 
-        // Truncate error message if too long
+        // Truncate error message if too long (use chars() for Unicode safety)
         let max_error_len = (popup_area.width as usize).saturating_sub(6);
-        let truncated_error: String = if error_msg.len() > max_error_len {
-            format!("{}…", &error_msg[..max_error_len.saturating_sub(1)])
+        let truncated_error: String = if error_msg.chars().count() > max_error_len {
+            error_msg
+                .chars()
+                .take(max_error_len.saturating_sub(1))
+                .chain(std::iter::once('…'))
+                .collect()
         } else {
             error_msg.to_string()
         };
