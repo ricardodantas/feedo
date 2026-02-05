@@ -624,24 +624,21 @@ impl App {
             .find(|f| f.url == feed_url)
             .and_then(|f| f.sync_id.clone());
 
-        // Try to delete from remote sync server if configured
+        // Try to delete from remote sync server if configured (fire-and-forget)
         if self.ui.sync_enabled {
             if let Some(sync) = &self.config.sync {
                 if let Some(password) = &sync.password {
-                    // Use sync_id if available, otherwise fall back to feed/{url}
-                    let feed_id = sync_id.clone().unwrap_or_else(|| format!("feed/{}", feed_url));
-                    match crate::sync::SyncManager::connect(&sync.server, &sync.username, password)
-                        .await
-                    {
-                        Ok(manager) => {
-                            if let Err(e) = manager.client().remove_subscription(manager.auth(), &feed_id).await {
-                                // Log error but continue with local delete
-                                tracing::warn!("Failed to remove feed from sync server: {}", e);
+                    // Use sync_id if available, otherwise skip server delete
+                    if let Some(feed_id) = sync_id.clone() {
+                        let server = sync.server.clone();
+                        let username = sync.username.clone();
+                        let password = password.clone();
+                        // Spawn in background - don't block UI
+                        tokio::spawn(async move {
+                            if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
+                                let _ = manager.client().remove_subscription(manager.auth(), &feed_id).await;
                             }
-                        }
-                        Err(e) => {
-                            tracing::warn!("Failed to connect to sync server: {}", e);
-                        }
+                        });
                     }
                 }
             }
@@ -687,33 +684,30 @@ impl App {
     #[allow(clippy::map_unwrap_or)]
     async fn perform_delete_folder(&mut self, folder_idx: usize) {
         // Get the folder info including sync_ids
-        let (folder_name, feed_sync_ids): (String, Vec<Option<String>>) = self
+        let (folder_name, feed_sync_ids): (String, Vec<String>) = self
             .config
             .folders
             .get(folder_idx)
-            .map(|f| (f.name.clone(), f.feeds.iter().map(|feed| feed.sync_id.clone()).collect()))
+            .map(|f| (f.name.clone(), f.feeds.iter().filter_map(|feed| feed.sync_id.clone()).collect()))
             .unwrap_or_default();
 
-        let feed_count = feed_sync_ids.len();
+        let feed_count = self.config.folders.get(folder_idx).map_or(0, |f| f.feeds.len());
 
-        // Try to delete feeds from remote sync server if configured
+        // Try to delete feeds from remote sync server if configured (fire-and-forget)
         if self.ui.sync_enabled && !feed_sync_ids.is_empty() {
             if let Some(sync) = &self.config.sync {
                 if let Some(password) = &sync.password {
-                    match crate::sync::SyncManager::connect(&sync.server, &sync.username, password)
-                        .await
-                    {
-                        Ok(manager) => {
-                            for sync_id in feed_sync_ids.iter().flatten() {
-                                if let Err(e) = manager.client().remove_subscription(manager.auth(), sync_id).await {
-                                    tracing::warn!("Failed to remove feed {} from sync server: {}", sync_id, e);
-                                }
+                    let server = sync.server.clone();
+                    let username = sync.username.clone();
+                    let password = password.clone();
+                    // Spawn in background - don't block UI
+                    tokio::spawn(async move {
+                        if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
+                            for sync_id in &feed_sync_ids {
+                                let _ = manager.client().remove_subscription(manager.auth(), sync_id).await;
                             }
                         }
-                        Err(e) => {
-                            tracing::warn!("Failed to connect to sync server: {}", e);
-                        }
-                    }
+                    });
                 }
             }
         }
