@@ -153,7 +153,7 @@ impl App {
                 if !update_check_done && !needs_initial_refresh {
                     update_check_done = true;
                     if let crate::VersionCheck::UpdateAvailable { latest, .. } =
-                        crate::check_for_updates_timeout(Duration::from_secs(2)).await
+                        crate::check_for_updates_crates_io().await
                     {
                         self.ui.update_available = Some(latest);
                     }
