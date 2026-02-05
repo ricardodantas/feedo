@@ -81,6 +81,7 @@ pub mod opml;
 pub mod sync;
 pub mod theme;
 pub mod ui;
+pub mod update;
 
 // Re-export main types for convenience
 pub use app::App;
@@ -92,3 +93,7 @@ pub use feed::{
 };
 pub use sync::{GReaderClient, SyncConfig, SyncManager, SyncProvider, SyncResult};
 pub use theme::{Theme, ThemeName, ThemePalette};
+pub use update::{
+    PackageManager, VersionCheck, check_for_updates, check_for_updates_timeout,
+    detect_package_manager, run_update,
+};

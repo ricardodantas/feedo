@@ -55,10 +55,17 @@ impl App {
         // Fetch feeds on startup (will use cache if offline)
         feeds.refresh_all().await;
 
-        let ui = UiState {
+        let mut ui = UiState {
             sync_enabled,
             ..Default::default()
         };
+
+        // Check for updates (with short timeout)
+        if let crate::VersionCheck::UpdateAvailable { latest, .. } =
+            crate::check_for_updates_timeout(std::time::Duration::from_secs(2)).await
+        {
+            ui.update_available = Some(latest);
+        }
 
         let mut app = Self {
             config,
@@ -108,6 +115,13 @@ impl App {
             // Render
             terminal.draw(|frame| self.render(frame))?;
 
+            // Process pending update after draw (so "Updating..." is visible)
+            if self.ui.pending_update {
+                self.process_pending_update();
+                // Redraw immediately after update completes
+                terminal.draw(|frame| self.render(frame))?;
+            }
+
             // Handle input
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
@@ -120,6 +134,22 @@ impl App {
         }
 
         Ok(())
+    }
+
+    /// Process a pending update.
+    fn process_pending_update(&mut self) {
+        self.ui.pending_update = false;
+
+        match crate::run_update(&self.ui.package_manager) {
+            Ok(()) => {
+                self.ui.update_status = Some("Update complete! Please restart feedo.".to_string());
+                self.ui.update_available = None;
+            }
+            Err(e) => {
+                self.ui.update_status = Some(format!("Update failed: {e}"));
+            }
+        }
+        self.ui.mode = crate::ui::Mode::Normal;
     }
 
     /// Rebuild the flattened feed list for the UI.

@@ -92,6 +92,28 @@ impl App {
             self.render_help_dialog(frame, area);
         }
 
+        // Update confirmation dialog
+        if self.ui.mode == Mode::UpdateConfirm {
+            self.render_update_confirm_dialog(frame, area);
+        }
+
+        // Updating overlay
+        if self.ui.mode == Mode::Updating {
+            self.render_updating_overlay(frame, area);
+        }
+
+        // Update available banner (only in normal mode)
+        if self.ui.mode == Mode::Normal && self.ui.update_available.is_some() {
+            self.render_update_banner(frame, area);
+        }
+
+        // Update status message (after completion)
+        if self.ui.mode != Mode::Updating {
+            if let Some(ref status) = self.ui.update_status {
+                self.render_update_status(frame, area, status);
+            }
+        }
+
         if let Some(error) = &self.ui.error {
             self.render_error_overlay(frame, area, error);
         }
@@ -1331,4 +1353,145 @@ fn strip_html(s: &str) -> String {
     regex_lite::Regex::new(r"<[^>]+>")
         .map(|re| re.replace_all(&clean, "").to_string())
         .unwrap_or(clean)
+}
+
+impl App {
+    /// Render update available banner at the top.
+    fn render_update_banner(&self, frame: &mut Frame, area: Rect) {
+        let Some(ref latest) = self.ui.update_available else {
+            return;
+        };
+
+        let pm = &self.ui.package_manager;
+        let current = crate::update::VERSION;
+
+        let banner_area = Rect {
+            x: area.x,
+            y: area.y,
+            width: area.width,
+            height: 1,
+        };
+
+        let text = format!(
+            " 📦 Update available: v{latest} (current: v{current}) — Press [U] to update via {}",
+            pm.name()
+        );
+
+        let paragraph = Paragraph::new(text).style(
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        );
+
+        frame.render_widget(paragraph, banner_area);
+    }
+
+    /// Render update confirmation dialog.
+    fn render_update_confirm_dialog(&self, frame: &mut Frame, area: Rect) {
+        let popup_area = centered_rect(50, 30, area);
+
+        frame.render_widget(Clear, popup_area);
+
+        let Some(ref latest) = self.ui.update_available else {
+            return;
+        };
+
+        let pm = &self.ui.package_manager;
+
+        let lines = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("Update to v{latest}?"),
+                Style::default().add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("Command: {}", pm.update_command()),
+                Style::default().fg(self.theme.accent()),
+            )),
+            Line::from(""),
+            Line::from(""),
+            Line::from(vec![
+                Span::styled("[Y]", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw(" Yes, update    "),
+                Span::styled("[N/Esc]", Style::default().add_modifier(Modifier::BOLD)),
+                Span::raw(" Cancel"),
+            ]),
+        ];
+
+        let paragraph = Paragraph::new(lines).alignment(Alignment::Center).block(
+            Block::default()
+                .title(" 📦 Update Feedo ")
+                .title_alignment(Alignment::Center)
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(self.theme.accent())),
+        );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    /// Render updating overlay.
+    #[allow(clippy::unused_self)]
+    fn render_updating_overlay(&self, frame: &mut Frame, area: Rect) {
+        // Dim the background
+        let overlay = Block::default().style(Style::default().bg(Color::Black));
+        frame.render_widget(overlay, area);
+
+        let popup_area = centered_rect(40, 20, area);
+        frame.render_widget(Clear, popup_area);
+
+        let lines = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                "⏳ Updating... please wait",
+                Style::default()
+                    .fg(Color::Yellow)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+        ];
+
+        let paragraph = Paragraph::new(lines).alignment(Alignment::Center).block(
+            Block::default()
+                .title(" Update in Progress ")
+                .title_alignment(Alignment::Center)
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(Color::Yellow)),
+        );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    /// Render update status message (bottom banner).
+    #[allow(clippy::unused_self)]
+    fn render_update_status(&self, frame: &mut Frame, area: Rect, status: &str) {
+        let banner_height = 3;
+        let banner_area = Rect {
+            x: 0,
+            y: area.height.saturating_sub(banner_height),
+            width: area.width,
+            height: banner_height,
+        };
+
+        let is_success = status.contains("complete");
+        let border_color = if is_success {
+            Color::Green
+        } else {
+            Color::Yellow
+        };
+
+        let paragraph = Paragraph::new(Line::from(status))
+            .alignment(Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(border_color)),
+            );
+
+        frame.render_widget(paragraph, banner_area);
+    }
 }

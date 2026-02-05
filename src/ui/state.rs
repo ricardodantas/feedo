@@ -44,6 +44,10 @@ pub enum Mode {
     Syncing,
     /// Help/hotkeys dialog mode.
     Help,
+    /// Update confirmation dialog.
+    UpdateConfirm,
+    /// Update in progress.
+    Updating,
 }
 
 /// Item in the feed list (can be folder or feed).
@@ -56,7 +60,7 @@ pub enum FeedListItem {
 }
 
 /// Complete UI state.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct UiState {
     /// Currently active panel.
@@ -147,6 +151,16 @@ pub struct UiState {
     // --- Error dialog state ---
     /// Error details for the error dialog (error message, context).
     pub error_dialog: Option<(String, Option<String>)>,
+
+    // --- Update state ---
+    /// Update available (latest version string).
+    pub update_available: Option<String>,
+    /// Detected package manager.
+    pub package_manager: crate::update::PackageManager,
+    /// Update status message (after completion).
+    pub update_status: Option<String>,
+    /// Flag to trigger update on next tick.
+    pub pending_update: bool,
 }
 
 impl UiState {
@@ -198,5 +212,45 @@ impl UiState {
     pub const fn reset_delete(&mut self) {
         self.pending_delete_feed = None;
         self.pending_delete_folder = None;
+    }
+}
+
+impl Default for UiState {
+    fn default() -> Self {
+        Self {
+            panel: Panel::default(),
+            mode: Mode::default(),
+            feed_list: Vec::new(),
+            feed_list_index: 0,
+            selected_feed: None,
+            selected_item: 0,
+            show_content: false,
+            scroll_offset: 0,
+            search_query: String::new(),
+            search_results: Vec::new(),
+            search_selected: 0,
+            theme_picker_index: 0,
+            error: None,
+            status: None,
+            add_feed_url: String::new(),
+            discovered_feeds: Vec::new(),
+            discovered_feed_index: 0,
+            add_feed_name: String::new(),
+            discovering: false,
+            add_feed_folder_index: None,
+            add_feed_new_folder: String::new(),
+            creating_new_folder: false,
+            share_platform_index: 0,
+            sync_enabled: false,
+            sync_status: None,
+            syncing: false,
+            pending_delete_feed: None,
+            pending_delete_folder: None,
+            error_dialog: None,
+            update_available: None,
+            package_manager: crate::update::detect_package_manager(),
+            update_status: None,
+            pending_update: false,
+        }
     }
 }

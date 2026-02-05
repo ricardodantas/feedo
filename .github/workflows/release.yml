@@ -215,25 +215,48 @@ jobs:
       - name: Update formula
         run: |
           VERSION="${{ needs.release.outputs.version }}"
-          URL="https://github.com/ricardodantas/feedo/archive/refs/tags/v${VERSION}.tar.gz"
           
-          # Download and calculate SHA256
-          curl -sL "$URL" -o feedo.tar.gz
-          SHA256=$(sha256sum feedo.tar.gz | cut -d' ' -f1)
+          # Download SHA256SUMS
+          curl -sL "https://github.com/ricardodantas/feedo/releases/download/v${VERSION}/SHA256SUMS.txt" -o SHA256SUMS.txt
           
-          # Update formula
+          # Extract checksums for each platform
+          SHA_AARCH64_DARWIN=$(grep "aarch64-apple-darwin" SHA256SUMS.txt | cut -d' ' -f1)
+          SHA_X86_64_DARWIN=$(grep "x86_64-apple-darwin" SHA256SUMS.txt | cut -d' ' -f1)
+          SHA_AARCH64_LINUX=$(grep "aarch64-unknown-linux-gnu" SHA256SUMS.txt | cut -d' ' -f1)
+          SHA_X86_64_LINUX=$(grep "x86_64-unknown-linux-gnu" SHA256SUMS.txt | cut -d' ' -f1)
+          
+          # Update formula with pre-built binaries
           cat > homebrew-tap/Formula/feedo.rb << EOF
           class Feedo < Formula
             desc "A beautiful, fast, and modern terminal RSS reader built with Rust"
             homepage "https://github.com/ricardodantas/feedo"
-            url "https://github.com/ricardodantas/feedo/archive/refs/tags/v${VERSION}.tar.gz"
-            sha256 "${SHA256}"
+            version "${VERSION}"
             license "MIT"
 
-            depends_on "rust" => :build
+            on_macos do
+              on_arm do
+                url "https://github.com/ricardodantas/feedo/releases/download/v#{version}/feedo-#{version}-aarch64-apple-darwin.tar.gz"
+                sha256 "${SHA_AARCH64_DARWIN}"
+              end
+              on_intel do
+                url "https://github.com/ricardodantas/feedo/releases/download/v#{version}/feedo-#{version}-x86_64-apple-darwin.tar.gz"
+                sha256 "${SHA_X86_64_DARWIN}"
+              end
+            end
+
+            on_linux do
+              on_arm do
+                url "https://github.com/ricardodantas/feedo/releases/download/v#{version}/feedo-#{version}-aarch64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA_AARCH64_LINUX}"
+              end
+              on_intel do
+                url "https://github.com/ricardodantas/feedo/releases/download/v#{version}/feedo-#{version}-x86_64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA_X86_64_LINUX}"
+              end
+            end
 
             def install
-              system "cargo", "install", *std_cargo_args
+              bin.install "feedo"
             end
 
             test do
@@ -248,5 +271,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Formula/feedo.rb
-          git commit -m "feedo: update to v${{ needs.release.outputs.version }}"
+          git diff --staged --quiet || git commit -m "feedo: update to v${{ needs.release.outputs.version }}"
           git push

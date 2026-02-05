@@ -32,8 +32,9 @@ impl App {
             super::Mode::ErrorDialog => self.handle_error_dialog_key(key),
             super::Mode::About => self.handle_about_key(key),
             super::Mode::Share => self.handle_share_key(key),
-            super::Mode::Syncing => KeyResult::Continue, // Ignore input while syncing
+            super::Mode::Syncing | super::Mode::Updating => KeyResult::Continue, // Ignore input
             super::Mode::Help => self.handle_help_key(key),
+            super::Mode::UpdateConfirm => self.handle_update_confirm_key(key),
             super::Mode::Normal => self.handle_normal_key(key).await,
         }
     }
@@ -157,6 +158,13 @@ impl App {
             // Help/hotkeys dialog
             KeyCode::Char('?') | KeyCode::F(1) => {
                 self.ui.mode = super::Mode::Help;
+            }
+
+            // Update (if available)
+            KeyCode::Char('U') => {
+                if self.ui.update_available.is_some() {
+                    self.ui.mode = super::Mode::UpdateConfirm;
+                }
             }
 
             _ => {}
@@ -559,6 +567,24 @@ impl App {
         match key {
             KeyCode::Esc | KeyCode::Enter | KeyCode::Char('q') | KeyCode::F(1) => {
                 self.ui.mode = super::Mode::Normal;
+            }
+            _ => {}
+        }
+        KeyResult::Continue
+    }
+
+    /// Handle keys in update confirmation dialog.
+    fn handle_update_confirm_key(&mut self, key: KeyCode) -> KeyResult {
+        match key {
+            KeyCode::Esc | KeyCode::Char('n' | 'N') => {
+                self.ui.mode = super::Mode::Normal;
+            }
+            KeyCode::Enter | KeyCode::Char('y' | 'Y') => {
+                // Set updating mode and flag - actual update runs on next tick
+                // This allows the UI to redraw and show "Updating..." first
+                self.ui.mode = super::Mode::Updating;
+                self.ui.update_status = Some("Updating... please wait".to_string());
+                self.ui.pending_update = true;
             }
             _ => {}
         }

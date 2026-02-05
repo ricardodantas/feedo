@@ -347,11 +347,11 @@ mod tests {
     #[test]
     fn test_extract_href() {
         assert_eq!(
-            extract_href(r#"<link href="https://example.com/feed" rel="alternate">"#),
+            extract_href(r"<link href='https://example.com/feed' rel='alternate'>"),
             Some("https://example.com/feed".to_string())
         );
         assert_eq!(
-            extract_href(r#"<link href='/rss.xml' type='application/rss+xml'>"#),
+            extract_href(r"<link href='/rss.xml' type='application/rss+xml'>"),
             Some("/rss.xml".to_string())
         );
     }
