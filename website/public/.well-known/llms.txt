@@ -11,7 +11,7 @@ Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal use
 - **License:** MIT
 - **Platforms:** macOS, Linux, Windows
 - **Repository:** https://github.com/ricardodantas/feedo
-- **Documentation:** https://feedo.dev/docs
+- **Documentation:** https://feedo.ricardodantas.me/docs
 - **Author:** Ricardo Dantas
 
 ## Installation
@@ -78,8 +78,8 @@ Config file location: `~/.config/feedo/config.toml`
 
 ## Links
 
-- Website: https://feedo.dev
+- Website: https://feedo.ricardodantas.me
 - GitHub: https://github.com/ricardodantas/feedo
 - Issues: https://github.com/ricardodantas/feedo/issues
-- Themes: https://feedo.dev/themes
-- Documentation: https://feedo.dev/docs
+- Themes: https://feedo.ricardodantas.me/themes
+- Documentation: https://feedo.ricardodantas.me/docs

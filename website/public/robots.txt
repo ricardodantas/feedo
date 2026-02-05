@@ -1,12 +1,12 @@
 # Feedo - Terminal RSS Reader
-# https://feedo.dev
+# https://feedo.ricardodantas.me
 
 User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://feedo.dev/sitemap.xml
+Sitemap: https://feedo.ricardodantas.me/sitemap.xml
 
 # AI/LLM agents
 # See llms.txt for structured information about this software
-# https://feedo.dev/llms.txt
+# https://feedo.ricardodantas.me/llms.txt
