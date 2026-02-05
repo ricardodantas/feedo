@@ -6,7 +6,7 @@ use color_eyre::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::sync::SyncConfig;
-use crate::theme::Theme;
+use ratatui_themes::Theme;
 
 /// Application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -43,8 +43,9 @@
 //! - [`feed`] — Feed fetching, parsing, and state management
 //! - [`opml`] — OPML import/export for feed migration
 //! - [`sync`] — Sync with `FreshRSS`, `Miniflux` via Google Reader API
-//! - [`theme`] — UI theming with 15 popular color schemes
 //! - [`ui`] — Terminal UI rendering and input handling
+//!
+//! Theme support is provided by the [`ratatui_themes`](https://crates.io/crates/ratatui-themes) crate.
 //!
 //! ## Example
 //!
@@ -80,7 +81,6 @@ pub mod error_report;
 pub mod feed;
 pub mod opml;
 pub mod sync;
-pub mod theme;
 pub mod ui;
 pub mod update;
 
@@ -93,8 +93,10 @@ pub use feed::{
     FeedManager, FeedType,
 };
 pub use sync::{GReaderClient, SyncConfig, SyncManager, SyncProvider, SyncResult};
-pub use theme::{Theme, ThemeName, ThemePalette};
 pub use update::{
     PackageManager, VersionCheck, check_for_updates, check_for_updates_crates_io,
     check_for_updates_timeout, detect_package_manager, run_update,
 };
+
+// Re-export theme types from ratatui-themes crate
+pub use ratatui_themes::{Theme, ThemeName, ThemePalette};

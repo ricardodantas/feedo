@@ -129,7 +129,7 @@ impl App {
 
         let bar = Paragraph::new(title).style(
             Style::default()
-                .fg(self.theme.accent())
+                .fg(self.theme.palette().accent)
                 .add_modifier(Modifier::BOLD),
         );
 
@@ -168,9 +168,9 @@ impl App {
 
     fn render_feeds_panel(&mut self, frame: &mut Frame, area: Rect) {
         let is_active = self.ui.panel == Panel::Feeds;
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
-        let highlight = self.theme.highlight();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
+        let highlight = self.theme.palette().warning;
 
         let items: Vec<ListItem> = self
             .ui
@@ -257,8 +257,8 @@ impl App {
 
     fn render_items_panel(&mut self, frame: &mut Frame, area: Rect) {
         let is_active = self.ui.panel == Panel::Items;
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
 
         let items: Vec<ListItem> = self
             .current_feed_items()
@@ -322,8 +322,8 @@ impl App {
         use std::fmt::Write;
 
         let is_active = self.ui.panel == Panel::Content;
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
 
         let content = self.selected_item().map_or_else(
             || format!("\n\n    {DOG_ICON}\n\n    Select an article to read"),
@@ -371,8 +371,8 @@ impl App {
 
     #[allow(clippy::option_if_let_else)]
     fn render_status_bar(&self, frame: &mut Frame, area: Rect) {
-        let muted = self.theme.muted();
-        let accent = self.theme.accent();
+        let muted = self.theme.palette().muted;
+        let accent = self.theme.palette().accent;
 
         // Build sync/refresh indicator
         let sync_indicator = if self.ui.syncing {
@@ -403,7 +403,7 @@ impl App {
     }
 
     fn render_search_overlay(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
+        let accent = self.theme.palette().accent;
         let popup_area = centered_rect(60, 50, area);
 
         frame.render_widget(Clear, popup_area);
@@ -463,11 +463,11 @@ impl App {
         frame.render_widget(Clear, popup_area);
 
         let error_block = Paragraph::new(format!("\n  ⚠️  {error}"))
-            .style(Style::default().fg(self.theme.error()))
+            .style(Style::default().fg(self.theme.palette().error))
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(self.theme.error()))
+                    .border_style(Style::default().fg(self.theme.palette().error))
                     .border_type(BorderType::Rounded)
                     .title(" Error "),
             )
@@ -477,7 +477,7 @@ impl App {
     }
 
     fn render_theme_picker(&self, frame: &mut Frame, area: Rect) {
-        use crate::theme::ThemeName;
+        use ratatui_themes::ThemeName;
 
         let popup_area = centered_rect(50, 70, area);
         frame.render_widget(Clear, popup_area);
@@ -516,7 +516,7 @@ impl App {
             })
             .collect();
 
-        let accent = self.theme.accent();
+        let accent = self.theme.palette().accent;
         let theme_list = List::new(items).block(
             Block::default()
                 .borders(Borders::ALL)
@@ -535,8 +535,8 @@ impl App {
 
     #[allow(clippy::too_many_lines)]
     fn render_add_feed_overlay(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
         let popup_area = centered_rect(60, 50, area);
 
         frame.render_widget(Clear, popup_area);
@@ -680,9 +680,9 @@ impl App {
     }
 
     fn render_folder_selection(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
-        let fg = self.theme.fg();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
+        let fg = self.theme.palette().fg;
 
         if self.ui.creating_new_folder {
             // New folder name input
@@ -771,8 +771,8 @@ impl App {
     #[allow(clippy::option_if_let_else)]
     #[allow(clippy::or_fun_call)]
     fn render_delete_confirmation(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
         let popup_area = centered_rect(50, 25, area);
 
         frame.render_widget(Clear, popup_area);
@@ -834,8 +834,8 @@ impl App {
     }
 
     fn render_error_dialog(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
         let error_color = Color::Red;
         let popup_area = centered_rect(70, 50, area);
 
@@ -908,9 +908,9 @@ impl App {
     }
 
     fn render_about_dialog(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
-        let fg = self.theme.fg();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
+        let fg = self.theme.palette().fg;
         let popup_area = centered_rect(60, 60, area);
 
         frame.render_widget(Clear, popup_area);
@@ -988,9 +988,9 @@ impl App {
     /// Render help/hotkeys dialog overlay.
     #[allow(clippy::too_many_lines)]
     fn render_help_dialog(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
-        let muted = self.theme.muted();
-        let fg = self.theme.fg();
+        let accent = self.theme.palette().accent;
+        let muted = self.theme.palette().muted;
+        let fg = self.theme.palette().fg;
 
         // Larger, more prominent popup
         let popup_area = centered_rect(75, 85, area);
@@ -1278,7 +1278,7 @@ impl App {
 
     /// Render share dialog overlay.
     fn render_share_dialog(&self, frame: &mut Frame, area: Rect) {
-        let accent = self.theme.accent();
+        let accent = self.theme.palette().accent;
         let popup_area = centered_rect(40, 35, area);
 
         // Clear background
@@ -1294,7 +1294,7 @@ impl App {
                 let style = if i == selected {
                     Style::default().fg(accent).bold()
                 } else {
-                    Style::default().fg(self.theme.fg())
+                    Style::default().fg(self.theme.palette().fg)
                 };
                 let prefix = if i == selected { "▸ " } else { "  " };
                 Line::from(format!("{prefix}{name}")).style(style)
@@ -1311,7 +1311,7 @@ impl App {
             Span::styled("Esc", Style::default().fg(accent)),
             Span::raw(" cancel"),
         ])
-        .style(Style::default().fg(self.theme.muted()));
+        .style(Style::default().fg(self.theme.palette().muted));
 
         let mut lines = vec![Line::from(""), Line::from("Select platform to share:")];
         lines.push(Line::from(""));
@@ -1427,7 +1427,7 @@ impl App {
             Line::from(""),
             Line::from(Span::styled(
                 format!("Command: {}", pm.update_command()),
-                Style::default().fg(self.theme.accent()),
+                Style::default().fg(self.theme.palette().accent),
             )),
             Line::from(""),
             Line::from(""),
@@ -1445,7 +1445,7 @@ impl App {
                 .title_alignment(Alignment::Center)
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded)
-                .border_style(Style::default().fg(self.theme.accent())),
+                .border_style(Style::default().fg(self.theme.palette().accent)),
         );
 
         frame.render_widget(paragraph, popup_area);

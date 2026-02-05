@@ -15,8 +15,8 @@ use tracing::info;
 
 use crate::config::Config;
 use crate::feed::{FeedItem, FeedManager};
-use crate::theme::Theme;
 use crate::ui::{FeedListItem, UiState};
+use ratatui_themes::Theme;
 
 /// Main application state.
 pub struct App {

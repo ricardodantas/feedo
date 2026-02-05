@@ -104,7 +104,7 @@ impl App {
                 self.ui.mode = super::Mode::ThemePicker;
                 // Set picker index to current theme
                 let current = self.theme.name;
-                self.ui.theme_picker_index = crate::theme::ThemeName::all()
+                self.ui.theme_picker_index = ratatui_themes::ThemeName::all()
                     .iter()
                     .position(|&t| t == current)
                     .unwrap_or(0);
@@ -176,7 +176,7 @@ impl App {
     }
 
     fn handle_theme_picker_key(&mut self, key: KeyCode) -> KeyResult {
-        let themes = crate::theme::ThemeName::all();
+        let themes = ratatui_themes::ThemeName::all();
 
         match key {
             KeyCode::Esc | KeyCode::Char('q') => {
