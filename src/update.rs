@@ -93,7 +93,7 @@ pub fn detect_package_manager() -> PackageManager {
 
 /// Check if a newer version is available on GitHub.
 pub async fn check_for_updates() -> VersionCheck {
-    check_for_updates_timeout(std::time::Duration::from_secs(3)).await
+    check_for_updates_timeout(std::time::Duration::from_secs(5)).await
 }
 
 /// Check if a newer version is available on GitHub with custom timeout.
@@ -112,20 +112,79 @@ pub async fn check_for_updates_timeout(timeout: std::time::Duration) -> VersionC
         .await;
 
     match result {
-        Ok(response) => match response.json::<serde_json::Value>().await {
-            Ok(json) => json.get("tag_name").and_then(|v| v.as_str()).map_or_else(
-                || VersionCheck::CheckFailed("Could not parse release info".to_string()),
-                |tag| {
-                    let latest = tag.trim_start_matches('v').to_string();
-                    let current = VERSION.to_string();
-
-                    if version_is_newer(&latest, &current) {
-                        VersionCheck::UpdateAvailable { latest, current }
-                    } else {
-                        VersionCheck::UpToDate
+        Ok(response) => {
+            let status = response.status();
+            match response.json::<serde_json::Value>().await {
+                Ok(json) => {
+                    // Check for GitHub API error messages
+                    if let Some(message) = json.get("message").and_then(|v| v.as_str()) {
+                        if message.contains("rate limit") {
+                            return VersionCheck::CheckFailed("GitHub API rate limit exceeded. Try again later.".to_string());
+                        }
+                        return VersionCheck::CheckFailed(format!("GitHub API error: {message}"));
                     }
-                },
-            ),
+                    
+                    // Parse the release tag
+                    json.get("tag_name").and_then(|v| v.as_str()).map_or_else(
+                        || VersionCheck::CheckFailed(format!("Could not parse release info (status: {status})")),
+                        |tag| {
+                            let latest = tag.trim_start_matches('v').to_string();
+                            let current = VERSION.to_string();
+
+                            if version_is_newer(&latest, &current) {
+                                VersionCheck::UpdateAvailable { latest, current }
+                            } else {
+                                VersionCheck::UpToDate
+                            }
+                        },
+                    )
+                }
+                Err(e) => VersionCheck::CheckFailed(format!("Failed to parse response: {e}")),
+            }
+        }
+        Err(e) => VersionCheck::CheckFailed(format!("Request failed: {e}")),
+    }
+}
+
+/// Check for updates using crates.io API (no rate limits).
+pub async fn check_for_updates_crates_io() -> VersionCheck {
+    let url = "https://crates.io/api/v1/crates/feedo";
+    
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(5))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => return VersionCheck::CheckFailed(format!("Failed to create client: {e}")),
+    };
+
+    let result = client
+        .get(url)
+        .header("User-Agent", format!("feedo/{VERSION}"))
+        .send()
+        .await;
+
+    match result {
+        Ok(response) => match response.json::<serde_json::Value>().await {
+            Ok(json) => {
+                // crates.io returns: {"crate": {"max_version": "1.2.3", ...}}
+                json.get("crate")
+                    .and_then(|c| c.get("max_version"))
+                    .and_then(|v| v.as_str())
+                    .map_or_else(
+                        || VersionCheck::CheckFailed("Could not parse crates.io response".to_string()),
+                        |latest_str| {
+                            let latest = latest_str.to_string();
+                            let current = VERSION.to_string();
+
+                            if version_is_newer(&latest, &current) {
+                                VersionCheck::UpdateAvailable { latest, current }
+                            } else {
+                                VersionCheck::UpToDate
+                            }
+                        },
+                    )
+            }
             Err(e) => VersionCheck::CheckFailed(format!("Failed to parse response: {e}")),
         },
         Err(e) => VersionCheck::CheckFailed(format!("Request failed: {e}")),

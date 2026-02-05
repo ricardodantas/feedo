@@ -399,7 +399,7 @@ async fn sync_feeds() -> Result<()> {
 }
 
 async fn run_update() -> Result<()> {
-    use feedo::update::{check_for_updates, detect_package_manager, run_update as do_update, VersionCheck};
+    use feedo::update::{check_for_updates_crates_io, detect_package_manager, run_update as do_update, VersionCheck};
 
     println!("(◕ᴥ◕) Checking for updates...\n");
 
@@ -407,7 +407,8 @@ async fn run_update() -> Result<()> {
     println!("  Installed via: {}", pm.name());
     println!("  Current version: {}", feedo::update::VERSION);
 
-    let check = check_for_updates().await;
+    // Use crates.io API (no rate limits, more reliable)
+    let check = check_for_updates_crates_io().await;
 
     match check {
         VersionCheck::UpdateAvailable { latest, .. } => {
