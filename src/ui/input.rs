@@ -481,10 +481,9 @@ impl App {
         // Push to remote sync server if configured (fire-and-forget)
         if self.ui.sync_enabled {
             if let Some(sync) = &self.config.sync {
-                if let Some(password) = &sync.password {
+                if let Some(password) = sync.get_password() {
                     let server = sync.server.clone();
                     let username = sync.username.clone();
-                    let password = password.clone();
                     let feed_url = url.clone();
                     let feed_title = name.clone();
                     let category = folder_name.map(|f| format!("user/-/label/{}", f));
@@ -657,12 +656,11 @@ impl App {
         // Try to delete from remote sync server if configured (fire-and-forget)
         if self.ui.sync_enabled {
             if let Some(sync) = &self.config.sync {
-                if let Some(password) = &sync.password {
+                if let Some(password) = sync.get_password() {
                     // Use sync_id if available, otherwise skip server delete
                     if let Some(feed_id) = sync_id.clone() {
                         let server = sync.server.clone();
                         let username = sync.username.clone();
-                        let password = password.clone();
                         // Spawn in background - don't block UI
                         tokio::spawn(async move {
                             if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
@@ -726,10 +724,9 @@ impl App {
         // Try to delete feeds from remote sync server if configured (fire-and-forget)
         if self.ui.sync_enabled && !feed_sync_ids.is_empty() {
             if let Some(sync) = &self.config.sync {
-                if let Some(password) = &sync.password {
+                if let Some(password) = sync.get_password() {
                     let server = sync.server.clone();
                     let username = sync.username.clone();
-                    let password = password.clone();
                     // Spawn in background - don't block UI
                     tokio::spawn(async move {
                         if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {

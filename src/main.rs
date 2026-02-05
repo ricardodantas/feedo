@@ -245,18 +245,40 @@ async fn sync_login(
     let subs = client.subscriptions(&auth).await?;
     println!("✓ Found {} subscriptions", subs.len());
 
-    // Save to config
+    // Store password securely in system keychain
+    let keychain_key = format!("{}@{}", username, server);
+    match feedo::credentials::store_password(&keychain_key, password) {
+        Ok(()) => println!("✓ Password stored securely in system keychain"),
+        Err(e) => {
+            println!("⚠ Could not store in keychain: {e}");
+            println!("  Password will be stored in config file (less secure)");
+        }
+    }
+
+    // Save to config (password only stored if keychain failed)
     let mut config = Config::load()?;
+    let keychain_ok = feedo::credentials::get_password(&keychain_key).is_some();
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
         username: username.to_string(),
-        password: Some(password.to_string()),
+        password: if keychain_ok { None } else { Some(password.to_string()) },
     });
     config.save()?;
 
     println!("\n(◕ᴥ◕) Sync configured! Run 'feedo sync' to sync your feeds.");
     Ok(())
+}
+
+/// Get sync password from keychain or config fallback.
+fn get_sync_password(sync: &SyncConfig) -> Option<String> {
+    // Try keychain first
+    let keychain_key = format!("{}@{}", sync.username, sync.server);
+    if let Some(password) = feedo::credentials::get_password(&keychain_key) {
+        return Some(password);
+    }
+    // Fall back to config file
+    sync.password.clone()
 }
 
 async fn sync_status() -> Result<()> {
@@ -267,23 +289,24 @@ async fn sync_status() -> Result<()> {
         println!("  Provider: {:?}", sync.provider);
         println!("  Server:   {}", sync.server);
         println!("  Username: {}", sync.username);
+        
+        let password = get_sync_password(sync);
+        let keychain_key = format!("{}@{}", sync.username, sync.server);
+        let in_keychain = feedo::credentials::get_password(&keychain_key).is_some();
         println!(
             "  Password: {}",
-            if sync.password.is_some() {
-                "****"
+            if password.is_some() {
+                if in_keychain { "**** (keychain)" } else { "**** (config file)" }
             } else {
                 "(not set)"
             }
         );
 
         // Try to connect and show stats
-        if sync.password.is_some() {
+        if let Some(password) = password {
             println!("\nTesting connection...");
             let client = GReaderClient::new(&sync.server);
-            match client
-                .login(&sync.username, sync.password.as_deref().unwrap_or(""))
-                .await
-            {
+            match client.login(&sync.username, &password).await {
                 Ok(auth) => {
                     println!("✓ Connection successful");
                     if let Ok(subs) = client.subscriptions(&auth).await {
@@ -318,7 +341,7 @@ async fn sync_feeds() -> Result<()> {
         color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first.")
     })?;
 
-    let password = sync.password.as_deref().ok_or_else(|| {
+    let password = get_sync_password(&sync).ok_or_else(|| {
         color_eyre::eyre::eyre!("No password stored. Run 'feedo sync login' again.")
     })?;
 
@@ -328,7 +351,7 @@ async fn sync_feeds() -> Result<()> {
     let mut cache = feedo::FeedCache::load()?;
 
     // Connect and run full sync
-    let manager = feedo::SyncManager::connect(&sync.server, &sync.username, password).await?;
+    let manager = feedo::SyncManager::connect(&sync.server, &sync.username, &password).await?;
     let result = manager.full_sync(&mut config, &mut cache).await?;
 
     // Save changes

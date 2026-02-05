@@ -283,9 +283,23 @@ pub struct SyncConfig {
     pub server: String,
     /// Username.
     pub username: String,
-    /// Password or API key (stored securely).
+    /// Password or API key (fallback if keychain unavailable).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
+}
+
+impl SyncConfig {
+    /// Get the password, trying keychain first then config fallback.
+    #[must_use]
+    pub fn get_password(&self) -> Option<String> {
+        // Try keychain first
+        let keychain_key = format!("{}@{}", self.username, self.server);
+        if let Some(password) = crate::credentials::get_password(&keychain_key) {
+            return Some(password);
+        }
+        // Fall back to config file
+        self.password.clone()
+    }
 }
 
 /// Supported sync providers.

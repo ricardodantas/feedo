@@ -75,6 +75,7 @@
 
 pub mod app;
 pub mod config;
+pub mod credentials;
 pub mod error_report;
 pub mod feed;
 pub mod opml;

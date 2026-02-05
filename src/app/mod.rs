@@ -258,11 +258,10 @@ impl App {
             .ok_or_else(|| color_eyre::eyre::eyre!("No sync configured"))?;
 
         let password = sync
-            .password
-            .as_deref()
+            .get_password()
             .ok_or_else(|| color_eyre::eyre::eyre!("No password stored"))?;
 
-        let manager = SyncManager::connect(&sync.server, &sync.username, password).await?;
+        let manager = SyncManager::connect(&sync.server, &sync.username, &password).await?;
 
         let result = manager
             .full_sync(&mut self.config, &mut self.feeds.cache)
