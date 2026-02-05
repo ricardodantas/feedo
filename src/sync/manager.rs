@@ -42,6 +42,16 @@ impl SyncManager {
         Ok(Self { client, auth })
     }
 
+    /// Get a reference to the client.
+    pub fn client(&self) -> &GReaderClient {
+        &self.client
+    }
+
+    /// Get a reference to the auth token.
+    pub fn auth(&self) -> &AuthToken {
+        &self.auth
+    }
+
     /// Import subscriptions from server to local config.
     pub async fn import_subscriptions(&self, config: &mut Config) -> Result<SyncResult> {
         let mut result = SyncResult::default();

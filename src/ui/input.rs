@@ -28,7 +28,7 @@ impl App {
             super::Mode::AddFeedSelect => self.handle_add_feed_select_key(key),
             super::Mode::AddFeedName => self.handle_add_feed_name_key(key),
             super::Mode::AddFeedFolder => self.handle_add_feed_folder_key(key).await,
-            super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key),
+            super::Mode::ConfirmDelete => self.handle_confirm_delete_key(key).await,
             super::Mode::ErrorDialog => self.handle_error_dialog_key(key),
             super::Mode::About => self.handle_about_key(key),
             super::Mode::Share => self.handle_share_key(key),
@@ -516,10 +516,10 @@ impl App {
     }
 
     /// Handle keys in delete confirmation mode.
-    fn handle_confirm_delete_key(&mut self, key: KeyCode) -> KeyResult {
+    async fn handle_confirm_delete_key(&mut self, key: KeyCode) -> KeyResult {
         match key {
             KeyCode::Char('y' | 'Y') => {
-                self.perform_delete();
+                self.perform_delete().await;
             }
             KeyCode::Char('n' | 'N') | KeyCode::Esc => {
                 self.ui.reset_delete();
@@ -593,10 +593,10 @@ impl App {
     }
 
     /// Actually delete the feed or folder after confirmation.
-    fn perform_delete(&mut self) {
+    async fn perform_delete(&mut self) {
         // Check if we're deleting a folder
         if let Some(folder_idx) = self.ui.pending_delete_folder {
-            self.perform_delete_folder(folder_idx);
+            self.perform_delete_folder(folder_idx).await;
             return;
         }
 
@@ -605,23 +605,42 @@ impl App {
             return;
         };
 
-        // Get the feed name for status message
-        let feed_name = self
-            .feeds
-            .feeds
-            .get(feed_idx)
-            .map(|f| f.name.clone())
-            .unwrap_or_default();
+        // Get the feed URL and name for sync and status message
+        let (feed_url, feed_name) = match self.feeds.feeds.get(feed_idx) {
+            Some(feed) => (feed.url.clone(), feed.name.clone()),
+            None => {
+                self.ui.reset_delete();
+                self.ui.mode = super::Mode::Normal;
+                return;
+            }
+        };
+
+        // Try to delete from remote sync server if configured
+        if self.ui.sync_enabled {
+            if let Some(sync) = &self.config.sync {
+                if let Some(password) = &sync.password {
+                    let feed_id = format!("feed/{}", feed_url);
+                    match crate::sync::SyncManager::connect(&sync.server, &sync.username, password)
+                        .await
+                    {
+                        Ok(manager) => {
+                            if let Err(e) = manager.client().remove_subscription(manager.auth(), &feed_id).await {
+                                // Log error but continue with local delete
+                                tracing::warn!("Failed to remove feed from sync server: {}", e);
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!("Failed to connect to sync server: {}", e);
+                        }
+                    }
+                }
+            }
+        }
 
         // Remove from config - check folders first, then root feeds
         let mut found = false;
         for folder in &mut self.config.folders {
-            if let Some(pos) = folder.feeds.iter().position(|f| {
-                self.feeds
-                    .feeds
-                    .get(feed_idx)
-                    .is_some_and(|feed| feed.url == f.url)
-            }) {
+            if let Some(pos) = folder.feeds.iter().position(|f| f.url == feed_url) {
                 folder.feeds.remove(pos);
                 found = true;
                 break;
@@ -629,12 +648,7 @@ impl App {
         }
 
         if !found {
-            if let Some(pos) = self.config.feeds.iter().position(|f| {
-                self.feeds
-                    .feeds
-                    .get(feed_idx)
-                    .is_some_and(|feed| feed.url == f.url)
-            }) {
+            if let Some(pos) = self.config.feeds.iter().position(|f| f.url == feed_url) {
                 self.config.feeds.remove(pos);
             }
         }
@@ -661,21 +675,39 @@ impl App {
 
     /// Delete a folder and all its feeds.
     #[allow(clippy::map_unwrap_or)]
-    fn perform_delete_folder(&mut self, folder_idx: usize) {
-        // Get the folder name for status message
-        let folder_name = self
+    async fn perform_delete_folder(&mut self, folder_idx: usize) {
+        // Get the folder info
+        let (folder_name, feed_urls): (String, Vec<String>) = self
             .config
             .folders
             .get(folder_idx)
-            .map(|f| f.name.clone())
+            .map(|f| (f.name.clone(), f.feeds.iter().map(|feed| feed.url.clone()).collect()))
             .unwrap_or_default();
 
-        let feed_count = self
-            .config
-            .folders
-            .get(folder_idx)
-            .map(|f| f.feeds.len())
-            .unwrap_or(0);
+        let feed_count = feed_urls.len();
+
+        // Try to delete feeds from remote sync server if configured
+        if self.ui.sync_enabled && !feed_urls.is_empty() {
+            if let Some(sync) = &self.config.sync {
+                if let Some(password) = &sync.password {
+                    match crate::sync::SyncManager::connect(&sync.server, &sync.username, password)
+                        .await
+                    {
+                        Ok(manager) => {
+                            for feed_url in &feed_urls {
+                                let feed_id = format!("feed/{}", feed_url);
+                                if let Err(e) = manager.client().remove_subscription(manager.auth(), &feed_id).await {
+                                    tracing::warn!("Failed to remove feed {} from sync server: {}", feed_url, e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            tracing::warn!("Failed to connect to sync server: {}", e);
+                        }
+                    }
+                }
+            }
+        }
 
         // Remove the folder from config
         if folder_idx < self.config.folders.len() {
