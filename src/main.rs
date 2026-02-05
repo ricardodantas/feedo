@@ -31,6 +31,7 @@ async fn main() -> Result<()> {
             provider,
         } => sync_login(&server, &username, &password, provider).await,
         Command::SyncStatus => sync_status().await,
+        Command::Update => run_update().await,
         Command::Help => {
             print_help();
             Ok(())
@@ -55,6 +56,7 @@ enum Command {
         provider: SyncProvider,
     },
     SyncStatus,
+    Update,
     Help,
     Version,
 }
@@ -126,6 +128,7 @@ fn parse_args() -> Result<Command> {
                 Ok(Command::Sync)
             }
         }
+        "update" => Ok(Command::Update),
         other => Err(color_eyre::eyre::eyre!(
             "Unknown option: {other}\nRun 'feedo --help' for usage"
         )),
@@ -143,7 +146,7 @@ A stunning terminal RSS reader — your news, your way.
 
 USAGE:
     feedo [OPTIONS]
-    feedo sync [COMMAND]
+    feedo [COMMAND]
 
 OPTIONS:
     -i, --import <FILE>    Import feeds from OPML file
@@ -151,12 +154,13 @@ OPTIONS:
     -h, --help             Show this help message
     -v, --version          Show version information
 
-SYNC COMMANDS:
-    feedo sync                             Sync with configured server
-    feedo sync login <server> <user> <pw>  Configure sync server
-    feedo sync status                      Show sync configuration
+COMMANDS:
+    update                                 Check for updates and install
+    sync                                   Sync with configured server
+    sync login <server> <user> <pw>        Configure sync server
+    sync status                            Show sync configuration
 
-    Supported providers: FreshRSS, Miniflux, Inoreader, The Old Reader
+    Supported sync providers: FreshRSS, Miniflux, Inoreader, The Old Reader
 
     Example:
       feedo sync login https://rss.example.com/api/greader.php user pass
@@ -391,5 +395,46 @@ async fn sync_feeds() -> Result<()> {
     }
 
     println!("\n(◕ᴥ◕) Sync complete!");
+    Ok(())
+}
+
+async fn run_update() -> Result<()> {
+    use feedo::update::{check_for_updates, detect_package_manager, run_update as do_update, VersionCheck};
+
+    println!("(◕ᴥ◕) Checking for updates...\n");
+
+    let pm = detect_package_manager();
+    println!("  Installed via: {}", pm.name());
+    println!("  Current version: {}", feedo::update::VERSION);
+
+    let check = check_for_updates().await;
+
+    match check {
+        VersionCheck::UpdateAvailable { latest, .. } => {
+            println!("  Latest version: {latest}");
+            println!("\n⬆ Update available! Installing...\n");
+            
+            match do_update(&pm) {
+                Ok(()) => {
+                    println!("✓ Successfully updated to {latest}!");
+                    println!("\nRestart feedo to use the new version.");
+                }
+                Err(e) => {
+                    println!("✗ Update failed: {e}");
+                    println!("\nYou can manually update with:");
+                    println!("  {}", pm.update_command());
+                    return Err(color_eyre::eyre::eyre!("Update failed"));
+                }
+            }
+        }
+        VersionCheck::UpToDate => {
+            println!("\n✓ Already on the latest version!");
+        }
+        VersionCheck::CheckFailed(msg) => {
+            println!("\n⚠ Could not check for updates: {msg}");
+            return Err(color_eyre::eyre::eyre!("Update check failed: {msg}"));
+        }
+    }
+
     Ok(())
 }
