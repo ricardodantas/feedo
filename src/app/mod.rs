@@ -171,6 +171,19 @@ impl App {
         for feed_idx in self.feeds.root_feed_indices() {
             self.ui.feed_list.push(FeedListItem::Feed(feed_idx));
         }
+
+        // Sync list state for scrolling
+        self.sync_feed_list_state();
+    }
+
+    /// Sync `feed_list_state` selection with `feed_list_index`.
+    pub fn sync_feed_list_state(&mut self) {
+        self.ui.feed_list_state.select(Some(self.ui.feed_list_index));
+    }
+
+    /// Sync `items_list_state` selection with `selected_item`.
+    pub fn sync_items_list_state(&mut self) {
+        self.ui.items_list_state.select(Some(self.ui.selected_item));
     }
 
     /// Select the first feed in the list.

@@ -39,7 +39,7 @@ pub const DOG_ICON: &str = "(◕ᴥ◕)";
 
 impl App {
     /// Render the entire UI.
-    pub fn render(&self, frame: &mut Frame) {
+    pub fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
         // Main layout: title bar, content, status bar
@@ -136,7 +136,7 @@ impl App {
         frame.render_widget(bar, area);
     }
 
-    fn render_content(&self, frame: &mut Frame, area: Rect) {
+    fn render_content(&mut self, frame: &mut Frame, area: Rect) {
         let constraints = if self.ui.show_content {
             [
                 Constraint::Percentage(20),
@@ -166,10 +166,11 @@ impl App {
         }
     }
 
-    fn render_feeds_panel(&self, frame: &mut Frame, area: Rect) {
+    fn render_feeds_panel(&mut self, frame: &mut Frame, area: Rect) {
         let is_active = self.ui.panel == Panel::Feeds;
         let accent = self.theme.accent();
         let muted = self.theme.muted();
+        let highlight = self.theme.highlight();
 
         let items: Vec<ListItem> = self
             .ui
@@ -192,8 +193,9 @@ impl App {
                             format!("{arrow} {icon} {}", folder.name)
                         };
 
+                        // Don't apply selection style here - ListState handles it
                         let style = if is_selected {
-                            Style::default().fg(self.theme.highlight()).bold()
+                            Style::default().fg(highlight).bold()
                         } else {
                             Style::default().fg(Color::White).bold()
                         };
@@ -218,6 +220,7 @@ impl App {
                             format!("{indent}○ {}", feed.name)
                         };
 
+                        // Apply selection style only for non-ListState approach
                         let style = if is_selected {
                             Style::default().fg(accent).bold()
                         } else if unread > 0 {
@@ -238,18 +241,21 @@ impl App {
             Style::default().fg(muted)
         };
 
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(border_style)
-                .border_type(BorderType::Rounded)
-                .title(" 📡 Feeds "),
-        );
+        let list = List::new(items)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(border_style)
+                    .border_type(BorderType::Rounded)
+                    .title(" 📡 Feeds "),
+            )
+            .highlight_symbol("▶ ");
 
-        frame.render_widget(list, area);
+        // Use stateful rendering for automatic scrolling
+        frame.render_stateful_widget(list, area, &mut self.ui.feed_list_state);
     }
 
-    fn render_items_panel(&self, frame: &mut Frame, area: Rect) {
+    fn render_items_panel(&mut self, frame: &mut Frame, area: Rect) {
         let is_active = self.ui.panel == Panel::Items;
         let accent = self.theme.accent();
         let muted = self.theme.muted();
@@ -294,15 +300,18 @@ impl App {
             .and_then(|idx| self.feeds.feeds.get(idx))
             .map_or(" Articles ", |f| &f.name);
 
-        let list = List::new(items).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_style(border_style)
-                .border_type(BorderType::Rounded)
-                .title(format!(" 📰 {title} ")),
-        );
+        let list = List::new(items)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_style(border_style)
+                    .border_type(BorderType::Rounded)
+                    .title(format!(" 📰 {title} ")),
+            )
+            .highlight_symbol("▶ ");
 
-        frame.render_widget(list, area);
+        // Use stateful rendering for automatic scrolling
+        frame.render_stateful_widget(list, area, &mut self.ui.items_list_state);
     }
 
     fn render_content_panel(&self, frame: &mut Frame, area: Rect) {

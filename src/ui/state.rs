@@ -1,6 +1,7 @@
 //! UI state management.
 
 use crate::feed::DiscoveredFeed;
+use ratatui::widgets::ListState;
 
 /// Active panel in the UI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -75,11 +76,17 @@ pub struct UiState {
     /// Selected index in feed list.
     pub feed_list_index: usize,
 
+    /// List state for feed list (handles scrolling).
+    pub feed_list_state: ListState,
+
     /// Currently selected feed index (if any).
     pub selected_feed: Option<usize>,
 
     /// Selected item index within the feed.
     pub selected_item: usize,
+
+    /// List state for items list (handles scrolling).
+    pub items_list_state: ListState,
 
     /// Whether content panel is visible.
     pub show_content: bool,
@@ -222,8 +229,10 @@ impl Default for UiState {
             mode: Mode::default(),
             feed_list: Vec::new(),
             feed_list_index: 0,
+            feed_list_state: ListState::default(),
             selected_feed: None,
             selected_item: 0,
+            items_list_state: ListState::default(),
             show_content: false,
             scroll_offset: 0,
             search_query: String::new(),

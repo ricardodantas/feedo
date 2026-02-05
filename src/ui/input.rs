@@ -52,6 +52,7 @@ impl App {
                 {
                     self.ui.selected_feed = Some(feed_idx);
                     self.ui.selected_item = item_idx;
+                    self.sync_items_list_state();
                     self.ui.mode = super::Mode::Normal;
                     self.ui.panel = super::Panel::Items;
                     self.ui.search_query.clear();
@@ -729,6 +730,7 @@ impl App {
                 let item_count = self.current_feed_items().len();
                 if self.ui.selected_item < item_count.saturating_sub(1) {
                     self.ui.selected_item += 1;
+                    self.sync_items_list_state();
                 }
             }
             super::Panel::Content => {
@@ -747,6 +749,7 @@ impl App {
             }
             super::Panel::Items => {
                 self.ui.selected_item = self.ui.selected_item.saturating_sub(1);
+                self.sync_items_list_state();
             }
             super::Panel::Content => {
                 self.ui.scroll_offset = self.ui.scroll_offset.saturating_sub(1);
@@ -762,6 +765,7 @@ impl App {
             }
             super::Panel::Items => {
                 self.ui.selected_item = 0;
+                self.sync_items_list_state();
             }
             super::Panel::Content => {
                 self.ui.scroll_offset = 0;
@@ -778,6 +782,7 @@ impl App {
             super::Panel::Items => {
                 let len = self.current_feed_items().len();
                 self.ui.selected_item = len.saturating_sub(1);
+                self.sync_items_list_state();
             }
             super::Panel::Content => {
                 self.ui.scroll_offset = u16::MAX;
@@ -797,6 +802,7 @@ impl App {
                         super::state::FeedListItem::Feed(idx) => {
                             self.ui.selected_feed = Some(idx);
                             self.ui.selected_item = 0;
+                            self.sync_items_list_state();
                             self.ui.panel = super::Panel::Items;
                         }
                     }
@@ -912,11 +918,15 @@ impl App {
     }
 
     fn update_selected_feed(&mut self) {
+        // Sync list state for scrolling
+        self.sync_feed_list_state();
+
         if let Some(super::state::FeedListItem::Feed(idx)) =
             self.ui.feed_list.get(self.ui.feed_list_index)
         {
             self.ui.selected_feed = Some(*idx);
             self.ui.selected_item = 0;
+            self.sync_items_list_state();
         }
     }
 
