@@ -124,18 +124,6 @@ impl App {
                 terminal.draw(|frame| self.render(frame))?;
             }
 
-            // Process pending sync after draw (so "Syncing..." is visible)
-            if self.ui.pending_sync {
-                self.ui.pending_sync = false;
-                match self.run_sync().await {
-                    Ok(()) => {}
-                    Err(e) => self.ui.set_error(format!("Sync failed: {e}")),
-                }
-                self.ui.mode = crate::ui::Mode::Normal;
-                // Redraw immediately after sync completes
-                terminal.draw(|frame| self.render(frame))?;
-            }
-
             // Use poll with timeout to allow background work
             if poll(Duration::from_millis(100))? {
                 if let Event::Key(key) = event::read()? {
@@ -274,12 +262,8 @@ impl App {
             .as_deref()
             .ok_or_else(|| color_eyre::eyre::eyre!("No password stored"))?;
 
-        self.ui.syncing = true;
-        self.ui.sync_status = Some("Connecting...".to_string());
-
         let manager = SyncManager::connect(&sync.server, &sync.username, password).await?;
 
-        self.ui.sync_status = Some("Syncing subscriptions...".to_string());
         let result = manager
             .full_sync(&mut self.config, &mut self.feeds.cache)
             .await?;
@@ -295,9 +279,8 @@ impl App {
             self.rebuild_feed_list();
         }
 
-        self.ui.syncing = false;
-        self.ui.sync_status = Some(format!(
-            "Synced: +{} feeds, {} read",
+        self.ui.set_status(format!(
+            "✓ Sync complete: +{} feeds, {} read",
             result.feeds_imported,
             result.items_marked_read + result.items_synced_to_server
         ));
