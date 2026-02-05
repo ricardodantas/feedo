@@ -64,23 +64,25 @@ pub fn detect_package_manager() -> PackageManager {
         let exe_str = exe_path.to_string_lossy();
 
         if exe_str.contains("/Cellar/") || exe_str.contains("/homebrew/") {
-            // Try to get the full formula name from brew
-            if let Ok(output) = std::process::Command::new("brew")
-                .args(["info", "--json=v2", "feedo"])
-                .output()
-                && output.status.success()
-                && let Ok(json) = serde_json::from_slice::<serde_json::Value>(&output.stdout)
-                && let Some(formulae) = json.get("formulae").and_then(|f| f.as_array())
-                && let Some(formula) = formulae.first()
-                && let Some(full_name) = formula.get("full_name").and_then(|n| n.as_str())
-            {
-                return PackageManager::Homebrew {
-                    formula: full_name.to_string(),
-                };
+            // Try to get the full formula name from brew (try tap name first)
+            for formula_name in ["ricardodantas/tap/feedo", "feedo"] {
+                if let Ok(output) = std::process::Command::new("brew")
+                    .args(["info", "--json=v2", formula_name])
+                    .output()
+                    && output.status.success()
+                    && let Ok(json) = serde_json::from_slice::<serde_json::Value>(&output.stdout)
+                    && let Some(formulae) = json.get("formulae").and_then(|f| f.as_array())
+                    && let Some(formula) = formulae.first()
+                    && let Some(full_name) = formula.get("full_name").and_then(|n| n.as_str())
+                {
+                    return PackageManager::Homebrew {
+                        formula: full_name.to_string(),
+                    };
+                }
             }
-            // Fallback to just "feedo" if we can't determine the tap
+            // Fallback to the tap formula name
             return PackageManager::Homebrew {
-                formula: "feedo".to_string(),
+                formula: "ricardodantas/tap/feedo".to_string(),
             };
         }
     }
