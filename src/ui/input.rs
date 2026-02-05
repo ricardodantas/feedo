@@ -444,10 +444,14 @@ impl App {
 
         let url = discovered.url.clone();
 
+        // Get folder name for sync category
+        let folder_name = self.ui.add_feed_folder_index
+            .and_then(|idx| if idx != usize::MAX { self.config.folders.get(idx).map(|f| f.name.clone()) } else { None });
+
         let feed_config = FeedConfig {
             name: name.clone(),
             url: url.clone(),
-            sync_id: None,
+            sync_id: None, // Will be populated on next sync
         };
 
         // Add to folder if one is selected, otherwise add to root feeds
@@ -470,6 +474,30 @@ impl App {
         if let Err(e) = self.config.save() {
             self.ui.set_error(format!("Failed to save: {e}"));
             return;
+        }
+
+        // Push to remote sync server if configured (fire-and-forget)
+        if self.ui.sync_enabled {
+            if let Some(sync) = &self.config.sync {
+                if let Some(password) = &sync.password {
+                    let server = sync.server.clone();
+                    let username = sync.username.clone();
+                    let password = password.clone();
+                    let feed_url = url.clone();
+                    let feed_title = name.clone();
+                    let category = folder_name.map(|f| format!("user/-/label/{}", f));
+                    tokio::spawn(async move {
+                        if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
+                            let _ = manager.client().add_subscription(
+                                manager.auth(),
+                                &feed_url,
+                                Some(&feed_title),
+                                category.as_deref(),
+                            ).await;
+                        }
+                    });
+                }
+            }
         }
 
         // Reload feed manager from config to sync folder structure
