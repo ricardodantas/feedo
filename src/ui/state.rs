@@ -148,6 +148,8 @@ pub struct UiState {
     pub sync_status: Option<String>,
     /// Whether sync is in progress.
     pub syncing: bool,
+    /// Whether a sync should be triggered (deferred).
+    pub pending_sync: bool,
     /// Whether initial feed refresh is in progress.
     pub refreshing: bool,
 
@@ -255,6 +257,7 @@ impl Default for UiState {
             sync_enabled: false,
             sync_status: None,
             syncing: false,
+            pending_sync: false,
             refreshing: false,
             pending_delete_feed: None,
             pending_delete_folder: None,

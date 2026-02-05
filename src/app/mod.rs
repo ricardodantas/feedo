@@ -124,6 +124,18 @@ impl App {
                 terminal.draw(|frame| self.render(frame))?;
             }
 
+            // Process pending sync after draw (so "Syncing..." is visible)
+            if self.ui.pending_sync {
+                self.ui.pending_sync = false;
+                match self.run_sync().await {
+                    Ok(()) => {}
+                    Err(e) => self.ui.set_error(format!("Sync failed: {e}")),
+                }
+                self.ui.mode = crate::ui::Mode::Normal;
+                // Redraw immediately after sync completes
+                terminal.draw(|frame| self.render(frame))?;
+            }
+
             // Use poll with timeout to allow background work
             if poll(Duration::from_millis(100))? {
                 if let Event::Key(key) = event::read()? {

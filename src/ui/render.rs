@@ -102,6 +102,11 @@ impl App {
             self.render_updating_overlay(frame, area);
         }
 
+        // Syncing overlay
+        if self.ui.mode == Mode::Syncing {
+            self.render_syncing_overlay(frame, area);
+        }
+
         // Update available banner (only in normal mode)
         if self.ui.mode == Mode::Normal && self.ui.update_available.is_some() {
             self.render_update_banner(frame, area);
@@ -1479,6 +1484,40 @@ impl App {
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded)
                 .border_style(Style::default().fg(Color::Yellow)),
+        );
+
+        frame.render_widget(paragraph, popup_area);
+    }
+
+    /// Render syncing overlay.
+    fn render_syncing_overlay(&self, frame: &mut Frame, area: Rect) {
+        // Dim the background
+        let overlay = Block::default().style(Style::default().bg(Color::Black));
+        frame.render_widget(overlay, area);
+
+        let popup_area = centered_rect(40, 20, area);
+        frame.render_widget(Clear, popup_area);
+
+        let status_text = self.ui.sync_status.as_deref().unwrap_or("Syncing...");
+
+        let lines = vec![
+            Line::from(""),
+            Line::from(Span::styled(
+                format!("⟳ {status_text}"),
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            Line::from(""),
+        ];
+
+        let paragraph = Paragraph::new(lines).alignment(Alignment::Center).block(
+            Block::default()
+                .title(" Sync in Progress ")
+                .title_alignment(Alignment::Center)
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(Color::Cyan)),
         );
 
         frame.render_widget(paragraph, popup_area);

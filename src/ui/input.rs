@@ -134,13 +134,11 @@ impl App {
             KeyCode::Char('o') => self.open_link(),
             KeyCode::Char('s') => self.open_share_dialog(),
             KeyCode::Char('S') => {
-                if self.ui.sync_enabled {
-                    self.ui.set_status("Syncing...");
-                    match self.run_sync().await {
-                        Ok(()) => {}
-                        Err(e) => self.ui.set_error(format!("Sync failed: {e}")),
-                    }
-                } else {
+                if self.ui.sync_enabled && !self.ui.syncing {
+                    self.ui.pending_sync = true;
+                    self.ui.syncing = true;
+                    self.ui.mode = super::Mode::Syncing;
+                } else if !self.ui.sync_enabled {
                     self.ui
                         .set_error("No sync configured. Run 'feedo sync login' first.");
                 }
