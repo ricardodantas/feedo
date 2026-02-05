@@ -1,0 +1,85 @@
+# Feedo
+
+> A beautiful, fast terminal RSS reader built with Rust
+
+Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal user interface). It features vim-style keybindings, 15 stunning color themes, offline reading support, and automatic feed discovery.
+
+## Quick Facts
+
+- **Type:** Command-line application / TUI
+- **Language:** Rust
+- **License:** MIT
+- **Platforms:** macOS, Linux, Windows
+- **Repository:** https://github.com/ricardodantas/feedo
+- **Documentation:** https://feedo.dev/docs
+- **Author:** Ricardo Dantas
+
+## Installation
+
+### Homebrew (macOS/Linux)
+```bash
+brew install ricardodantas/tap/feedo
+```
+
+### Cargo (all platforms)
+```bash
+cargo install feedo
+```
+
+### Binary Downloads
+Pre-built binaries available at: https://github.com/ricardodantas/feedo/releases
+
+## Key Features
+
+- **Beautiful TUI**: Clean three-panel interface with rounded borders and smooth navigation
+- **Feed Discovery**: Auto-detect RSS/Atom feeds from any URL
+- **Offline Mode**: Articles cached locally for offline reading
+- **Smart Folders**: Organize feeds into collapsible folders with emoji icons
+- **15 Themes**: Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, and more
+- **Instant Search**: Real-time fuzzy search across all feeds
+- **Vim Keybindings**: j/k navigation, / for search, familiar shortcuts
+- **GReader Sync**: Sync with FreshRSS, Miniflux, and other GReader-compatible services
+- **Auto-Update**: Built-in update checker with one-key update
+
+## Usage
+
+```bash
+# Launch the TUI
+feedo
+
+# Add a feed via URL
+# Press 'n' in the TUI, paste URL
+
+# Search articles
+# Press '/' and start typing
+
+# Change theme
+# Press 't' to open theme picker
+```
+
+## Keyboard Shortcuts
+
+- `j`/`k` or arrows: Navigate up/down
+- `Enter` or `l`: Select/expand
+- `h` or `←`: Go back
+- `Tab`: Switch panels
+- `/`: Search
+- `n`: Add new feed
+- `r`: Refresh all feeds
+- `o`: Open in browser
+- `t`: Theme picker
+- `Space`: Toggle read/unread
+- `?`: Help
+- `q`: Quit
+
+## Configuration
+
+Config file location: `~/.config/feedo/config.toml`
+
+## Links
+
+- Website: https://feedo.dev
+- GitHub: https://github.com/ricardodantas/feedo
+- Issues: https://github.com/ricardodantas/feedo/issues
+- Themes: https://feedo.dev/themes
+- Documentation: https://feedo.dev/docs
