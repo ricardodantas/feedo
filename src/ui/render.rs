@@ -374,9 +374,11 @@ impl App {
         let muted = self.theme.muted();
         let accent = self.theme.accent();
 
-        // Build sync indicator
+        // Build sync/refresh indicator
         let sync_indicator = if self.ui.syncing {
             " ⟳ syncing │"
+        } else if self.ui.refreshing {
+            " ⟳ refreshing │"
         } else if self.ui.sync_enabled {
             " ☁ │"
         } else {

@@ -43,7 +43,7 @@ impl App {
         let config = Config::load()?;
         let theme = config.theme.clone();
         let sync_enabled = config.sync.is_some();
-        let mut feeds = FeedManager::new(&config)?;
+        let feeds = FeedManager::new(&config)?;
 
         // Check if we have cached data (offline mode)
         let has_cached = feeds.feeds.iter().any(|f| !f.items.is_empty());
@@ -52,20 +52,15 @@ impl App {
             info!("Loaded cached articles for offline reading");
         }
 
-        // Fetch feeds on startup (will use cache if offline)
-        feeds.refresh_all().await;
+        // Don't refresh on startup - let the UI show first, then refresh in background
+        // feeds.refresh_all().await;
 
-        let mut ui = UiState {
+        let ui = UiState {
             sync_enabled,
+            // Mark that we need to refresh feeds
+            refreshing: !has_cached,
             ..Default::default()
         };
-
-        // Check for updates (with short timeout)
-        if let crate::VersionCheck::UpdateAvailable { latest, .. } =
-            crate::check_for_updates_timeout(std::time::Duration::from_secs(2)).await
-        {
-            ui.update_available = Some(latest);
-        }
 
         let mut app = Self {
             config,
@@ -111,6 +106,13 @@ impl App {
         &mut self,
         terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     ) -> Result<()> {
+        use std::time::Duration;
+        use crossterm::event::poll;
+
+        // Track if we need initial refresh
+        let mut needs_initial_refresh = self.ui.refreshing;
+        let mut update_check_done = false;
+
         loop {
             // Render
             terminal.draw(|frame| self.render(frame))?;
@@ -122,12 +124,38 @@ impl App {
                 terminal.draw(|frame| self.render(frame))?;
             }
 
-            // Handle input
-            if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press {
-                    match self.handle_key(key.code).await {
-                        crate::ui::input::KeyResult::Quit => break,
-                        crate::ui::input::KeyResult::Continue => {}
+            // Use poll with timeout to allow background work
+            if poll(Duration::from_millis(100))? {
+                if let Event::Key(key) = event::read()? {
+                    if key.kind == KeyEventKind::Press {
+                        match self.handle_key(key.code).await {
+                            crate::ui::input::KeyResult::Quit => break,
+                            crate::ui::input::KeyResult::Continue => {}
+                        }
+                    }
+                }
+            } else {
+                // No input - do background work
+
+                // Initial refresh (one feed at a time to stay responsive)
+                if needs_initial_refresh {
+                    if let Some(idx) = self.feeds.feeds.iter().position(|f| f.last_updated.is_none()) {
+                        self.feeds.refresh_feed(idx).await;
+                        self.rebuild_feed_list();
+                    } else {
+                        needs_initial_refresh = false;
+                        self.ui.refreshing = false;
+                        self.feeds.save_cache();
+                    }
+                }
+
+                // Check for updates in background (once)
+                if !update_check_done && !needs_initial_refresh {
+                    update_check_done = true;
+                    if let crate::VersionCheck::UpdateAvailable { latest, .. } =
+                        crate::check_for_updates_timeout(Duration::from_secs(2)).await
+                    {
+                        self.ui.update_available = Some(latest);
                     }
                 }
             }
