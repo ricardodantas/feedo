@@ -245,24 +245,24 @@ async fn sync_login(
     let subs = client.subscriptions(&auth).await?;
     println!("✓ Found {} subscriptions", subs.len());
 
-    // Store password securely
-    let keychain_key = format!("{}@{}", username, server);
-    match feedo::credentials::store_password(&keychain_key, password) {
-        Ok(()) => println!("✓ Password stored securely"),
+    // Store password securely (encrypted)
+    let credential_key = format!("{}@{}", username, server);
+    match feedo::credentials::store_password(&credential_key, password) {
+        Ok(()) => println!("✓ Password encrypted and stored"),
         Err(e) => {
-            println!("⚠ Could not store password securely: {e}");
+            println!("⚠ Could not store password: {e}");
             println!("  Password will be stored in config file (not recommended)");
         }
     }
 
-    // Save to config (password only stored if secure storage failed)
+    // Save to config (password only stored if encryption failed)
     let mut config = Config::load()?;
-    let secure_ok = feedo::credentials::get_password(&keychain_key).is_some();
+    let encrypted_ok = feedo::credentials::get_password(&credential_key).is_some();
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
         username: username.to_string(),
-        password: if secure_ok { None } else { Some(password.to_string()) },
+        password: if encrypted_ok { None } else { Some(password.to_string()) },
     });
     config.save()?;
 
@@ -270,11 +270,11 @@ async fn sync_login(
     Ok(())
 }
 
-/// Get sync password from keychain or config fallback.
+/// Get sync password from encrypted storage or config fallback.
 fn get_sync_password(sync: &SyncConfig) -> Option<String> {
-    // Try keychain first
-    let keychain_key = format!("{}@{}", sync.username, sync.server);
-    if let Some(password) = feedo::credentials::get_password(&keychain_key) {
+    // Try encrypted storage first
+    let credential_key = format!("{}@{}", sync.username, sync.server);
+    if let Some(password) = feedo::credentials::get_password(&credential_key) {
         return Some(password);
     }
     // Fall back to config file
@@ -290,12 +290,12 @@ async fn sync_status() -> Result<()> {
         println!("  Server:   {}", sync.server);
         println!("  Username: {}", sync.username);
         
-        let keychain_key = format!("{}@{}", sync.username, sync.server);
-        let from_secure = feedo::credentials::get_password(&keychain_key).is_some();
+        let credential_key = format!("{}@{}", sync.username, sync.server);
+        let from_encrypted = feedo::credentials::get_password(&credential_key).is_some();
         let from_config = sync.password.is_some();
         let password = get_sync_password(sync);
         
-        let storage_info = if from_secure {
+        let storage_info = if from_encrypted {
             "**** (encrypted)"
         } else if from_config {
             "**** (config file - insecure!)"
