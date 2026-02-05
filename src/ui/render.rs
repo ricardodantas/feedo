@@ -911,182 +911,78 @@ impl App {
         let accent = self.theme.accent();
         let muted = self.theme.muted();
         let fg = self.theme.fg();
-        let bg = self.theme.bg();
+        let popup_area = centered_rect(60, 60, area);
 
-        let popup_area = centered_rect(56, 70, area);
         frame.render_widget(Clear, popup_area);
 
         let version = crate::error_report::VERSION;
+        let repo = crate::error_report::REPO_URL;
 
-        // Create inner layout for structured content
-        let inner = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(8),  // Logo section
-                Constraint::Length(3),  // Tagline
-                Constraint::Length(1),  // Divider
-                Constraint::Length(7),  // Info section
-                Constraint::Length(1),  // Divider
-                Constraint::Length(5),  // Tech section
-                Constraint::Min(0),     // Spacer
-                Constraint::Length(3),  // Actions
-            ])
-            .margin(1)
-            .split(popup_area);
-
-        // Animated-style gradient logo using different shades
-        let logo_lines = vec![
-            Line::from(vec![
-                Span::styled("    ███████", Style::default().fg(Color::Rgb(255, 180, 100))),
-                Span::styled("╗", Style::default().fg(Color::Rgb(255, 160, 80))),
-                Span::styled("███████", Style::default().fg(Color::Rgb(255, 140, 60))),
-                Span::styled("╗", Style::default().fg(Color::Rgb(255, 120, 40))),
-            ]),
-            Line::from(vec![
-                Span::styled("    ██", Style::default().fg(Color::Rgb(255, 175, 95))),
-                Span::styled("╔════╝", Style::default().fg(Color::Rgb(255, 155, 75))),
-                Span::styled("██", Style::default().fg(Color::Rgb(255, 135, 55))),
-                Span::styled("╔════╝", Style::default().fg(Color::Rgb(255, 115, 35))),
-            ]),
-            Line::from(vec![
-                Span::styled("    █████", Style::default().fg(Color::Rgb(255, 170, 90))),
-                Span::styled("╗ ", Style::default().fg(Color::Rgb(255, 150, 70))),
-                Span::styled(" █████", Style::default().fg(Color::Rgb(255, 130, 50))),
-                Span::styled("╗", Style::default().fg(Color::Rgb(255, 110, 30))),
-            ]),
-            Line::from(vec![
-                Span::styled("    ██", Style::default().fg(Color::Rgb(255, 165, 85))),
-                Span::styled("╔══╝ ", Style::default().fg(Color::Rgb(255, 145, 65))),
-                Span::styled(" ██", Style::default().fg(Color::Rgb(255, 125, 45))),
-                Span::styled("╔══╝", Style::default().fg(Color::Rgb(255, 105, 25))),
-            ]),
-            Line::from(vec![
-                Span::styled("    ██", Style::default().fg(Color::Rgb(255, 160, 80))),
-                Span::styled("║    ", Style::default().fg(Color::Rgb(255, 140, 60))),
-                Span::styled("  ██", Style::default().fg(Color::Rgb(255, 120, 40))),
-                Span::styled("║    ", Style::default().fg(Color::Rgb(255, 100, 20))),
-                Span::styled("  ╭─────────────╮", Style::default().fg(muted)),
-            ]),
-            Line::from(vec![
-                Span::styled("    ╚═╝     ╚═╝", Style::default().fg(Color::Rgb(255, 140, 60))),
-                Span::styled("     ", Style::default()),
-                Span::styled("  │", Style::default().fg(muted)),
-                Span::styled(" (◕ᴥ◕) woof! ", Style::default().fg(accent).italic()),
-                Span::styled("│", Style::default().fg(muted)),
-            ]),
-            Line::from(vec![
-                Span::styled("    ╭──────────────────╯", Style::default().fg(muted)),
-                Span::styled("  ╰─────────────╯", Style::default().fg(muted)),
-            ]),
+        let logo = [
+            "    ██████╗██████╗██████╗██████╗  ██████╗",
+            "    ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗",
+            "    █████╗ █████╗ █████╗ ██║  ██║██║   ██║",
+            "    ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║",
+            "    ██║    ██████╗██████╗██████╔╝╚██████╔╝",
+            "    ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝",
         ];
 
-        let logo = Paragraph::new(logo_lines)
-            .alignment(ratatui::layout::Alignment::Center);
-        frame.render_widget(logo, inner[0]);
+        let mut lines: Vec<Line> = logo
+            .iter()
+            .map(|line| Line::from(Span::styled(*line, Style::default().fg(accent))))
+            .collect();
 
-        // Tagline with styled text
-        let tagline = Paragraph::new(vec![
+        lines.extend([
+            Line::from(""),
+            Line::from(Span::styled(
+                "(◕ᴥ◕) Your terminal RSS companion",
+                Style::default().fg(fg).italic(),
+            )),
             Line::from(""),
             Line::from(vec![
-                Span::styled("  Your ", Style::default().fg(muted)),
-                Span::styled("terminal RSS companion", Style::default().fg(fg).bold()),
+                Span::styled("Version: ", Style::default().fg(muted)),
+                Span::styled(version, Style::default().fg(accent).bold()),
             ]),
-        ])
-        .alignment(ratatui::layout::Alignment::Center);
-        frame.render_widget(tagline, inner[1]);
-
-        // Divider
-        let divider1 = Paragraph::new(Line::from(
-            Span::styled("  ─────────────────────────────────────  ", Style::default().fg(Color::Rgb(60, 60, 70)))
-        ))
-        .alignment(ratatui::layout::Alignment::Center);
-        frame.render_widget(divider1, inner[2]);
-
-        // Info section with nice formatting
-        let info_lines = vec![
             Line::from(""),
             Line::from(vec![
-                Span::styled("      ◆ ", Style::default().fg(accent)),
-                Span::styled("Version   ", Style::default().fg(muted)),
-                Span::styled(format!("v{version}"), Style::default().fg(Color::Rgb(130, 255, 180)).bold()),
-            ]),
-            Line::from(vec![
-                Span::styled("      ◆ ", Style::default().fg(accent)),
-                Span::styled("Author    ", Style::default().fg(muted)),
+                Span::styled("Author: ", Style::default().fg(muted)),
                 Span::styled("Ricardo Dantas", Style::default().fg(fg)),
             ]),
             Line::from(vec![
-                Span::styled("      ◆ ", Style::default().fg(accent)),
-                Span::styled("License   ", Style::default().fg(muted)),
-                Span::styled("MIT", Style::default().fg(Color::Rgb(180, 180, 255))),
+                Span::styled("License: ", Style::default().fg(muted)),
+                Span::styled("MIT", Style::default().fg(fg)),
             ]),
             Line::from(vec![
-                Span::styled("      ◆ ", Style::default().fg(accent)),
-                Span::styled("Website   ", Style::default().fg(muted)),
-                Span::styled("feedo.dev", Style::default().fg(Color::Rgb(100, 200, 255)).underlined()),
+                Span::styled("Repo: ", Style::default().fg(muted)),
+                Span::styled(repo, Style::default().fg(accent)),
             ]),
             Line::from(""),
-        ];
-        let info = Paragraph::new(info_lines);
-        frame.render_widget(info, inner[3]);
-
-        // Divider
-        let divider2 = Paragraph::new(Line::from(
-            Span::styled("  ─────────────────────────────────────  ", Style::default().fg(Color::Rgb(60, 60, 70)))
-        ))
-        .alignment(ratatui::layout::Alignment::Center);
-        frame.render_widget(divider2, inner[4]);
-
-        // Tech section
-        let tech_lines = vec![
+            Line::from(Span::styled(
+                "Built with Rust 🦀 + Ratatui",
+                Style::default().fg(muted).italic(),
+            )),
             Line::from(""),
             Line::from(vec![
-                Span::styled("      Built with ", Style::default().fg(muted).italic()),
-                Span::styled("Rust ", Style::default().fg(Color::Rgb(255, 120, 80)).bold()),
-                Span::styled("🦀", Style::default()),
-                Span::styled(" + ", Style::default().fg(muted)),
-                Span::styled("Ratatui", Style::default().fg(Color::Rgb(150, 200, 255)).bold()),
+                Span::styled(" [G] ", Style::default().fg(accent).bold()),
+                Span::raw("Open GitHub"),
+                Span::raw("    "),
+                Span::styled(" [Esc] ", Style::default().fg(muted)),
+                Span::raw("Close"),
             ]),
-            Line::from(vec![
-                Span::styled("      ", Style::default()),
-                Span::styled("Fast • ", Style::default().fg(Color::Rgb(100, 255, 150))),
-                Span::styled("Beautiful • ", Style::default().fg(Color::Rgb(255, 200, 100))),
-                Span::styled("Open Source", Style::default().fg(Color::Rgb(200, 150, 255))),
-            ]),
-        ];
-        let tech = Paragraph::new(tech_lines);
-        frame.render_widget(tech, inner[5]);
+        ]);
 
-        // Actions footer
-        let actions = Paragraph::new(vec![
-            Line::from(""),
-            Line::from(vec![
-                Span::styled("  ╭─", Style::default().fg(accent)),
-                Span::styled(" G ", Style::default().fg(bg).bg(accent).bold()),
-                Span::styled("─╮", Style::default().fg(accent)),
-                Span::styled(" GitHub ", Style::default().fg(muted)),
-                Span::styled("    ", Style::default()),
-                Span::styled("╭─", Style::default().fg(muted)),
-                Span::styled(" Esc ", Style::default().fg(bg).bg(muted).bold()),
-                Span::styled("─╮", Style::default().fg(muted)),
-                Span::styled(" Close", Style::default().fg(muted)),
-            ]),
-        ])
-        .alignment(ratatui::layout::Alignment::Center);
-        frame.render_widget(actions, inner[7]);
+        let paragraph = Paragraph::new(lines)
+            .alignment(ratatui::layout::Alignment::Center)
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .border_style(Style::default().fg(accent))
+                    .title(" 🐕 About Feedo ")
+                    .title_style(Style::default().fg(accent).bold()),
+            );
 
-        // Outer border
-        let border = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .border_style(Style::default().fg(accent))
-            .title(Span::styled(" ✨ About ", Style::default().fg(accent).bold()))
-            .title_bottom(Line::from(vec![
-                Span::styled(" ", Style::default()),
-                Span::styled("♥", Style::default().fg(Color::Rgb(255, 100, 120))),
-                Span::styled(" Made with love ", Style::default().fg(muted).italic()),
-            ]));
-        frame.render_widget(border, popup_area);
+        frame.render_widget(paragraph, popup_area);
     }
 
     /// Render help/hotkeys dialog overlay.
