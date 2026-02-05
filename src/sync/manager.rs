@@ -11,7 +11,7 @@ use tracing::{debug, info};
 
 use crate::config::{Config, FeedConfig, FolderConfig};
 use crate::feed::FeedCache;
-use crate::sync::{AuthToken, GReaderClient, StreamOptions, streams};
+use crate::sync::{AuthToken, GReaderClient, StreamOptions};
 
 /// Result of a sync operation.
 #[derive(Debug, Default)]
@@ -152,28 +152,12 @@ impl SyncManager {
     pub async fn sync_read_states_from_server(&self, cache: &mut FeedCache) -> Result<SyncResult> {
         let mut result = SyncResult::default();
 
-        // Fetch all read item IDs from server
-        let read_items = self
-            .client
-            .stream_item_ids(
-                &self.auth,
-                streams::READ,
-                Some(StreamOptions::with_count(10000)),
-            )
-            .await?;
-
-        info!("Server has {} read items", read_items.item_refs.len());
-
-        // Build a set of read item IDs (in decimal form)
-        let read_ids: HashSet<String> = read_items.item_refs.iter().map(|r| r.id.clone()).collect();
-
         // Get subscriptions to map feed IDs to URLs
         let subs = self.client.subscriptions(&self.auth).await?;
-        let _feed_id_to_url: HashMap<String, String> =
-            subs.iter().map(|s| (s.id.clone(), s.url.clone())).collect();
 
-        // For each subscription, fetch items and update local read state
+        // For each subscription, fetch items and check read status
         for sub in &subs {
+            // Fetch items with their read status
             let items = match self
                 .client
                 .stream_contents(&self.auth, &sub.id, Some(StreamOptions::with_count(100)))
@@ -189,17 +173,22 @@ impl SyncManager {
             };
 
             for item in &items.items {
-                // Check if this item is read on server
-                if let Some(decimal_id) = item.id_decimal() {
-                    let id_str = decimal_id.to_string();
-                    if read_ids.contains(&id_str) {
-                        // Mark as read locally
-                        // We need to find the local item ID
-                        if let Some(link) = item.link() {
-                            let local_id = crate::feed::CachedItem::generate_id(
-                                Some(link),
-                                item.title.as_deref().unwrap_or(""),
-                            );
+                // Check if this item is read on server (has "read" category)
+                let is_read_on_server = item.categories.iter().any(|c| c.contains("/state/com.google/read"));
+                
+                if is_read_on_server {
+                    // Mark as read locally using link+title to generate ID
+                    if let Some(link) = item.link() {
+                        let local_id = crate::feed::CachedItem::generate_id(
+                            Some(link),
+                            item.title.as_deref().unwrap_or(""),
+                        );
+                        // Check if already read locally
+                        let already_read = cache.get(&sub.url)
+                            .and_then(|f| f.items.iter().find(|i| i.id == local_id))
+                            .map_or(false, |i| i.read);
+                        
+                        if !already_read {
                             cache.set_item_read(&sub.url, &local_id, true);
                             result.items_marked_read += 1;
                         }
