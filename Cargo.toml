@@ -1,6 +1,6 @@
 [package]
 name = "feedo"
-version = "1.1.19"
+version = "1.1.20"
 edition = "2024"
 rust-version = "1.85"
 authors = ["Ricardo Dantas"]
@@ -54,6 +54,10 @@ arboard = "3.6.1"
 
 # Secure credential storage
 keyring = "3"
+
+# Encryption for fallback credential storage
+aes-gcm = "0.10"
+base64 = "0.22"
 
 [dev-dependencies]
 tokio-test = "0.4"

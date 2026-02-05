@@ -245,24 +245,24 @@ async fn sync_login(
     let subs = client.subscriptions(&auth).await?;
     println!("✓ Found {} subscriptions", subs.len());
 
-    // Store password securely in system keychain
+    // Store password securely
     let keychain_key = format!("{}@{}", username, server);
     match feedo::credentials::store_password(&keychain_key, password) {
-        Ok(()) => println!("✓ Password stored securely in system keychain"),
+        Ok(()) => println!("✓ Password stored securely"),
         Err(e) => {
-            println!("⚠ Could not store in keychain: {e}");
-            println!("  Password will be stored in config file (less secure)");
+            println!("⚠ Could not store password securely: {e}");
+            println!("  Password will be stored in config file (not recommended)");
         }
     }
 
-    // Save to config (password only stored if keychain failed)
+    // Save to config (password only stored if secure storage failed)
     let mut config = Config::load()?;
-    let keychain_ok = feedo::credentials::get_password(&keychain_key).is_some();
+    let secure_ok = feedo::credentials::get_password(&keychain_key).is_some();
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
         username: username.to_string(),
-        password: if keychain_ok { None } else { Some(password.to_string()) },
+        password: if secure_ok { None } else { Some(password.to_string()) },
     });
     config.save()?;
 
@@ -290,17 +290,19 @@ async fn sync_status() -> Result<()> {
         println!("  Server:   {}", sync.server);
         println!("  Username: {}", sync.username);
         
-        let password = get_sync_password(sync);
         let keychain_key = format!("{}@{}", sync.username, sync.server);
-        let in_keychain = feedo::credentials::get_password(&keychain_key).is_some();
-        println!(
-            "  Password: {}",
-            if password.is_some() {
-                if in_keychain { "**** (keychain)" } else { "**** (config file)" }
-            } else {
-                "(not set)"
-            }
-        );
+        let from_secure = feedo::credentials::get_password(&keychain_key).is_some();
+        let from_config = sync.password.is_some();
+        let password = get_sync_password(sync);
+        
+        let storage_info = if from_secure {
+            "**** (encrypted)"
+        } else if from_config {
+            "**** (config file - insecure!)"
+        } else {
+            "(not set)"
+        };
+        println!("  Password: {}", storage_info);
 
         // Try to connect and show stats
         if let Some(password) = password {
