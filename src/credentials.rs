@@ -73,6 +73,11 @@ pub fn store_credentials(key: &str, username: &str, password: &str) -> Result<()
         let _ = fs::set_permissions(&path, perms);
     }
     
+    // Verify the credentials can be read back
+    if get_credentials(key).is_none() {
+        return Err("Credentials written but verification failed".to_string());
+    }
+    
     debug!("Stored encrypted credentials for: {key}");
     Ok(())
 }

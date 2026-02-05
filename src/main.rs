@@ -251,17 +251,17 @@ async fn sync_login(
 
     // Store credentials securely (both username and password encrypted)
     let credential_key = format!("sync@{}", server);
-    match feedo::credentials::store_credentials(&credential_key, username, password) {
-        Ok(()) => println!("✓ Credentials encrypted and stored"),
-        Err(e) => {
-            println!("⚠ Could not store credentials: {e}");
-            println!("  Credentials will be stored in config file (not recommended)");
-        }
+    let encrypted_ok = feedo::credentials::store_credentials(&credential_key, username, password).is_ok();
+    
+    if encrypted_ok {
+        println!("✓ Credentials encrypted and stored");
+    } else {
+        println!("⚠ Could not encrypt credentials");
+        println!("  Credentials will be stored in config file (not recommended)");
     }
 
     // Save to config (credentials only stored if encryption failed)
     let mut config = Config::load()?;
-    let encrypted_ok = feedo::credentials::get_credentials(&credential_key).is_some();
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
