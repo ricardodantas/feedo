@@ -1,8 +1,8 @@
 # Feedo
 
-> A beautiful, fast terminal RSS reader built with Rust
+> A beautiful terminal RSS reader inspired by Reeder
 
-Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal user interface). It features vim-style keybindings, 15 stunning color themes, offline reading support, and automatic feed discovery.
+Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal user interface). It features vim-style keybindings, 15 stunning color themes, offline reading support, GReader sync, and automatic feed discovery.
 
 ## Quick Facts
 
@@ -11,8 +11,9 @@ Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal use
 - **License:** MIT
 - **Platforms:** macOS, Linux, Windows
 - **Repository:** https://github.com/ricardodantas/feedo
-- **Documentation:** https://feedo.ricardodantas.me/docs
+- **Documentation:** https://feedo.ricardodantas.me
 - **Author:** Ricardo Dantas
+- **Themes:** Powered by ratatui-themes (shared with Hazelnut)
 
 ## Installation
 
@@ -39,13 +40,17 @@ Pre-built binaries available at: https://github.com/ricardodantas/feedo/releases
 - **Instant Search**: Real-time fuzzy search across all feeds
 - **Vim Keybindings**: j/k navigation, / for search, familiar shortcuts
 - **GReader Sync**: Sync with FreshRSS, Miniflux, and other GReader-compatible services
-- **Auto-Update**: Built-in update checker with one-key update
+- **Secure Credentials**: Encrypted storage for sync service passwords
+- **Auto-Update**: Built-in update checker with one-key update or `feedo update` CLI
 
 ## Usage
 
 ```bash
 # Launch the TUI
 feedo
+
+# Check for updates and install
+feedo update
 
 # Add a feed via URL
 # Press 'n' in the TUI, paste URL
@@ -65,6 +70,7 @@ feedo
 - `Tab`: Switch panels
 - `/`: Search
 - `n`: Add new feed
+- `d`: Delete feed
 - `r`: Refresh all feeds
 - `o`: Open in browser
 - `t`: Theme picker
@@ -74,12 +80,18 @@ feedo
 
 ## Configuration
 
-Config file location: `~/.config/feedo/config.toml`
+Config file location: `~/.config/feedo/config.json`
+
+Feedo uses `~/.config/feedo/` on all platforms for consistency.
+
+## Related Projects
+
+- **Hazelnut**: Terminal file organizer by the same author
+- **ratatui-themes**: Shared theme library for both projects
 
 ## Links
 
 - Website: https://feedo.ricardodantas.me
 - GitHub: https://github.com/ricardodantas/feedo
 - Issues: https://github.com/ricardodantas/feedo/issues
-- Themes: https://feedo.ricardodantas.me/themes
-- Documentation: https://feedo.ricardodantas.me/docs
+- Crates.io: https://crates.io/crates/feedo

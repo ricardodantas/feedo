@@ -4,19 +4,22 @@ This file helps AI agents understand and contribute to the Feedo codebase effect
 
 ## Project Overview
 
-**Feedo** is a terminal RSS reader built with Rust and ratatui. Think Reeder for the command line.
+**Feedo** is a beautiful terminal RSS reader built with Rust and ratatui. Think Reeder for the command line.
 
 
 ```
 feedo/
 ├── src/
-│   ├── main.rs          # CLI entry point
+│   ├── main.rs          # CLI entry point, subcommands (update)
 │   ├── lib.rs           # Library root, public API
 │   ├── app/             # Application orchestration
 │   ├── config/          # Configuration (load/save, structs)
+│   ├── credentials.rs   # Encrypted credential storage
 │   ├── feed/            # Feed fetching & parsing
 │   ├── opml/            # OPML import/export
-│   ├── theme/           # UI theming
+│   ├── sync/            # GReader API sync (FreshRSS, Miniflux, etc.)
+│   ├── theme.rs         # Theme wrapper using ratatui-themes
+│   ├── update.rs        # Update checking & self-update
 │   └── ui/              # Terminal UI (ratatui)
 ├── Cargo.toml           # Dependencies & metadata
 └── README.md            # User documentation
@@ -29,6 +32,7 @@ feedo/
 | Language | Rust 2024 edition | Memory safety, performance |
 | Async | Tokio | Non-blocking feed fetching |
 | TUI | ratatui + crossterm | Modern, well-maintained |
+| Themes | ratatui-themes | Shared 15 themes with Hazelnut |
 | RSS Parsing | feed-rs | Handles RSS/Atom/JSON Feed |
 | HTTP | reqwest | Async, rustls for TLS |
 | Config | serde_json | Human-readable config |
@@ -47,7 +51,7 @@ feedo/
 - **Separation of concerns** — Each module has one job
 - **Async by default** — Network ops never block UI
 - **State is explicit** — No hidden global state
-- **Config is XDG-style** — `~/.config/feedo/` on all platforms
+- **Config is consistent** — `~/.config/feedo/` on all platforms
 
 ### File Organization
 ```rust
@@ -69,15 +73,28 @@ feedo/
 2. Update status bar hint in `src/ui/render.rs`
 3. Document in README.md keybindings table
 
-### Adding a New Theme Color
-1. Add variant to `AccentColor` enum in `src/theme/mod.rs`
-2. Implement `to_color()` conversion
-3. Document in README.md theme section
+### Adding a New Theme
+Themes are managed by the `ratatui-themes` crate (shared with Hazelnut).
+1. Add theme to `ratatui-themes` crate
+2. Update both Feedo and Hazelnut dependencies
 
 ### Adding a Config Option
 1. Add field to `Config` struct in `src/config/data.rs`
 2. Add `#[serde(default = "default_fn")]` for backwards compat
 3. Document in README.md configuration section
+
+## CLI Commands
+
+```bash
+# Launch the TUI
+feedo
+
+# Check for updates and install
+feedo update
+
+# Show version
+feedo --version
+```
 
 ## Testing
 
@@ -135,6 +152,12 @@ Fetching 50 feeds sequentially = 50× latency. Async lets us fetch in parallel w
 ### Why ratatui over other TUI libs?
 Active maintenance, good docs, immediate mode rendering fits our architecture.
 
+### Why ratatui-themes?
+Shared theme definitions with Hazelnut for consistent look across projects.
+
+### Why encrypted credential storage?
+Secure storage of sync service passwords without requiring OS keychain (works on all platforms).
+
 ## Troubleshooting
 
 ### Build fails with openssl errors
@@ -146,13 +169,19 @@ Ensure terminal supports Unicode. Try: `echo "◕ᴥ◕"`
 ### Feed not parsing
 Check if it's valid RSS/Atom. Some sites serve HTML at feed URLs.
 
-## The website's URL
+## Website URL
 
 https://feedo.ricardodantas.me
+
+## Related Projects
+
+- **Hazelnut** — Terminal file organizer (same author, shared themes)
+- **ratatui-themes** — Shared theme library
 
 ## Resources
 
 - [ratatui docs](https://docs.rs/ratatui)
+- [ratatui-themes](https://crates.io/crates/ratatui-themes)
 - [Tokio tutorial](https://tokio.rs/tokio/tutorial)
 - [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/)
 - [feed-rs examples](https://github.com/feed-rs/feed-rs)
