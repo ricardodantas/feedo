@@ -373,32 +373,54 @@ impl App {
     fn render_status_bar(&self, frame: &mut Frame, area: Rect) {
         let muted = self.theme.palette().muted;
         let accent = self.theme.palette().accent;
+        let bg = self.theme.palette().bg;
 
         // Build sync/refresh indicator
-        let sync_indicator = if self.ui.syncing {
-            " ⟳ syncing │"
+        let sync_indicator: Vec<Span> = if self.ui.syncing {
+            vec![Span::styled(" ⟳ syncing │ ", Style::default().fg(muted))]
         } else if self.ui.refreshing {
-            " ⟳ refreshing │"
+            vec![Span::styled(" ⟳ refreshing │ ", Style::default().fg(muted))]
         } else if self.ui.sync_enabled {
-            " ☁ │"
+            vec![Span::styled(" ☁ │ ", Style::default().fg(muted))]
         } else {
-            ""
+            vec![Span::styled(" ", Style::default())]
         };
 
-        let status = if let Some(msg) = &self.ui.status {
-            Span::styled(format!(" {DOG_ICON} {msg}"), Style::default().fg(accent))
+        let content: Vec<Span> = if let Some(msg) = &self.ui.status {
+            vec![
+                Span::styled(" ", Style::default()),
+                Span::styled(format!("{DOG_ICON} {msg}"), Style::default().fg(accent)),
+            ]
         } else if let Some(msg) = &self.ui.sync_status {
-            Span::styled(format!(" ☁ {msg}"), Style::default().fg(accent))
+            vec![
+                Span::styled(" ", Style::default()),
+                Span::styled(format!("☁ {msg}"), Style::default().fg(accent)),
+            ]
         } else {
-            Span::styled(
-                format!(
-                    "{sync_indicator} n add │ d delete │ r refresh │ / search │ s share │ t theme │ ? help │ A about │ q quit"
-                ),
-                Style::default().fg(muted),
-            )
+            let key_style = Style::default().fg(accent);
+            let text_style = Style::default().fg(muted);
+
+            let mut spans = sync_indicator.clone();
+            spans.extend(vec![
+                Span::styled("n", key_style),
+                Span::styled(": add  ", text_style),
+                Span::styled("d", key_style),
+                Span::styled(": delete  ", text_style),
+                Span::styled("r", key_style),
+                Span::styled(": refresh  ", text_style),
+                Span::styled("/", key_style),
+                Span::styled(": search  ", text_style),
+                Span::styled("t", key_style),
+                Span::styled(": theme  ", text_style),
+                Span::styled("?", key_style),
+                Span::styled(": help  ", text_style),
+                Span::styled("q", key_style),
+                Span::styled(": quit", text_style),
+            ]);
+            spans
         };
 
-        let bar = Paragraph::new(Line::from(status));
+        let bar = Paragraph::new(Line::from(content)).style(Style::default().bg(bg));
         frame.render_widget(bar, area);
     }
 
