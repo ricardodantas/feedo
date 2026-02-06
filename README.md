@@ -9,7 +9,27 @@
   </pre>
   <br>
   <b>(◕ᴥ◕) Your terminal RSS companion</b>
-  <br><br>
+</p>
+
+<p align="center">
+  <a href="https://github.com/ricardodantas/feedo/releases">
+    <img src="https://img.shields.io/github/v/release/ricardodantas/feedo?style=flat&labelColor=1e1e2e&color=cba6f7&logo=github&logoColor=white" alt="Release">
+  </a>
+  <a href="https://crates.io/crates/feedo">
+    <img src="https://img.shields.io/crates/v/feedo?style=flat&labelColor=1e1e2e&color=fab387&logo=rust&logoColor=white" alt="Crates.io">
+  </a>
+  <a href="https://github.com/ricardodantas/feedo/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/ricardodantas/feedo/ci.yml?style=flat&labelColor=1e1e2e&color=a6e3a1&logo=github-actions&logoColor=white&label=CI" alt="CI">
+  </a>
+  <a href="https://github.com/ricardodantas/feedo/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-89b4fa?style=flat&labelColor=1e1e2e" alt="License">
+  </a>
+  <a href="https://rust-lang.org">
+    <img src="https://img.shields.io/badge/rust-1.83+-f9e2af?style=flat&labelColor=1e1e2e&logo=rust&logoColor=white" alt="Rust Version">
+  </a>
+</p>
+
+<p align="center">
   <a href="https://ricardodantas.github.io/feedo/">🌐 Website</a> •
   <a href="#installation">Installation</a> •
   <a href="#features">Features</a> •
