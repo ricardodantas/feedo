@@ -190,6 +190,7 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ratatui_themes::ThemeName;
 
     #[test]
     fn test_default_config() {
@@ -204,5 +205,39 @@ mod tests {
         let json = serde_json::to_string(&config).unwrap();
         let parsed: Config = serde_json::from_str(&json).unwrap();
         assert_eq!(config.folders.len(), parsed.folders.len());
+    }
+
+    #[test]
+    fn test_theme_serialization_roundtrip() {
+        // Create config with specific theme
+        let mut config = Config::default();
+        config.theme = Theme::new(ThemeName::Dracula);
+        
+        // Serialize
+        let json = serde_json::to_string_pretty(&config).unwrap();
+        println!("Serialized config:\n{}", json);
+        
+        // Verify theme is in JSON
+        assert!(json.contains(r#""name": "dracula""#), "Theme name not found in JSON");
+        
+        // Deserialize
+        let parsed: Config = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.theme.name, ThemeName::Dracula, "Theme not preserved after roundtrip");
+    }
+
+    #[test]
+    fn test_theme_deserialization_from_file_format() {
+        // Test exact format from config file
+        let json = r#"{
+            "folders": [],
+            "feeds": [],
+            "theme": {
+                "name": "dracula"
+            },
+            "refresh_interval": 30
+        }"#;
+        
+        let config: Config = serde_json::from_str(json).unwrap();
+        assert_eq!(config.theme.name, ThemeName::Dracula);
     }
 }
