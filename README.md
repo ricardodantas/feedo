@@ -1,14 +1,17 @@
 <p align="center">
-  <pre>
-      ██████╗██████╗██████╗██████╗  ██████╗
-      ██╔═══╝██╔═══╝██╔═══╝██╔══██╗██╔═══██╗
-      █████╗ █████╗ █████╗ ██║  ██║██║   ██║
-      ██╔══╝ ██╔══╝ ██╔══╝ ██║  ██║██║   ██║
-      ██║    ██████╗██████╗██████╔╝╚██████╔╝
-      ╚═╝    ╚═════╝╚═════╝╚═════╝  ╚═════╝ 
-  </pre>
-  <br>
-  <b>(◕ᴥ◕) Your terminal RSS companion</b>
+  <img src="assets/screenshots/feedo-main.png" alt="Feedo Main View" width="700">
+</p>
+
+<h1 align="center">
+  (◕ᴥ◕) Feedo
+</h1>
+
+<p align="center">
+  <strong>A beautiful terminal RSS reader inspired by <a href="https://reederapp.com/">Reeder</a></strong>
+</p>
+
+<p align="center">
+  <i>Read your favorite feeds in style — all from your terminal.</i>
 </p>
 
 <p align="center">
@@ -37,11 +40,6 @@
   <a href="#configuration">Configuration</a> •
   <a href="#keybindings">Keybindings</a>
 </p>
-
----
-
-A **beautiful**, **fast**, and **modern** terminal RSS reader built with Rust.  
-Think [Reeder](https://reederapp.com/) meets the command line.
 
 <br>
 
