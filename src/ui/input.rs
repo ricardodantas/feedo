@@ -186,7 +186,7 @@ impl App {
                 // Apply selected theme
                 let selected_theme = themes[self.ui.theme_picker_index];
                 self.theme = crate::Theme::new(selected_theme);
-                self.config.theme = self.theme.clone();
+                self.config.theme = self.theme;
 
                 // Save config
                 if let Err(e) = self.config.save() {
@@ -447,8 +447,13 @@ impl App {
         let url = discovered.url.clone();
 
         // Get folder name for sync category
-        let folder_name = self.ui.add_feed_folder_index
-            .and_then(|idx| if idx != usize::MAX { self.config.folders.get(idx).map(|f| f.name.clone()) } else { None });
+        let folder_name = self.ui.add_feed_folder_index.and_then(|idx| {
+            if idx != usize::MAX {
+                self.config.folders.get(idx).map(|f| f.name.clone())
+            } else {
+                None
+            }
+        });
 
         let feed_config = FeedConfig {
             name: name.clone(),
@@ -487,13 +492,18 @@ impl App {
                     let feed_title = name.clone();
                     let category = folder_name.map(|f| format!("user/-/label/{}", f));
                     tokio::spawn(async move {
-                        if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
-                            let _ = manager.client().add_subscription(
-                                manager.auth(),
-                                &feed_url,
-                                Some(&feed_title),
-                                category.as_deref(),
-                            ).await;
+                        if let Ok(manager) =
+                            crate::sync::SyncManager::connect(&server, &username, &password).await
+                        {
+                            let _ = manager
+                                .client()
+                                .add_subscription(
+                                    manager.auth(),
+                                    &feed_url,
+                                    Some(&feed_title),
+                                    category.as_deref(),
+                                )
+                                .await;
                         }
                     });
                 }
@@ -645,7 +655,9 @@ impl App {
         };
 
         // Find the sync_id from config
-        let sync_id = self.config.folders
+        let sync_id = self
+            .config
+            .folders
             .iter()
             .flat_map(|f| f.feeds.iter())
             .chain(self.config.feeds.iter())
@@ -661,8 +673,14 @@ impl App {
                         let server = sync.server.clone();
                         // Spawn in background - don't block UI
                         tokio::spawn(async move {
-                            if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
-                                let _ = manager.client().remove_subscription(manager.auth(), &feed_id).await;
+                            if let Ok(manager) =
+                                crate::sync::SyncManager::connect(&server, &username, &password)
+                                    .await
+                            {
+                                let _ = manager
+                                    .client()
+                                    .remove_subscription(manager.auth(), &feed_id)
+                                    .await;
                             }
                         });
                     }
@@ -714,10 +732,22 @@ impl App {
             .config
             .folders
             .get(folder_idx)
-            .map(|f| (f.name.clone(), f.feeds.iter().filter_map(|feed| feed.sync_id.clone()).collect()))
+            .map(|f| {
+                (
+                    f.name.clone(),
+                    f.feeds
+                        .iter()
+                        .filter_map(|feed| feed.sync_id.clone())
+                        .collect(),
+                )
+            })
             .unwrap_or_default();
 
-        let feed_count = self.config.folders.get(folder_idx).map_or(0, |f| f.feeds.len());
+        let feed_count = self
+            .config
+            .folders
+            .get(folder_idx)
+            .map_or(0, |f| f.feeds.len());
 
         // Try to delete feeds from remote sync server if configured (fire-and-forget)
         if self.ui.sync_enabled && !feed_sync_ids.is_empty() {
@@ -726,9 +756,14 @@ impl App {
                     let server = sync.server.clone();
                     // Spawn in background - don't block UI
                     tokio::spawn(async move {
-                        if let Ok(manager) = crate::sync::SyncManager::connect(&server, &username, &password).await {
+                        if let Ok(manager) =
+                            crate::sync::SyncManager::connect(&server, &username, &password).await
+                        {
                             for sync_id in &feed_sync_ids {
-                                let _ = manager.client().remove_subscription(manager.auth(), sync_id).await;
+                                let _ = manager
+                                    .client()
+                                    .remove_subscription(manager.auth(), sync_id)
+                                    .await;
                             }
                         }
                     });

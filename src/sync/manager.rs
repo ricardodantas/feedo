@@ -114,7 +114,11 @@ impl SyncManager {
 
             if let Some(folder) = folder {
                 for (url, name, sync_id) in feeds {
-                    folder.feeds.push(FeedConfig { name, url, sync_id: Some(sync_id) });
+                    folder.feeds.push(FeedConfig {
+                        name,
+                        url,
+                        sync_id: Some(sync_id),
+                    });
                     result.feeds_imported += 1;
                 }
             } else {
@@ -122,7 +126,11 @@ impl SyncManager {
                     .into_iter()
                     .map(|(url, name, sync_id)| {
                         result.feeds_imported += 1;
-                        FeedConfig { name, url, sync_id: Some(sync_id) }
+                        FeedConfig {
+                            name,
+                            url,
+                            sync_id: Some(sync_id),
+                        }
                     })
                     .collect();
 
@@ -137,7 +145,11 @@ impl SyncManager {
 
         // Add root feeds
         for (url, name, sync_id) in root_feeds {
-            config.feeds.push(FeedConfig { name, url, sync_id: Some(sync_id) });
+            config.feeds.push(FeedConfig {
+                name,
+                url,
+                sync_id: Some(sync_id),
+            });
             result.feeds_imported += 1;
         }
 
@@ -174,8 +186,11 @@ impl SyncManager {
 
             for item in &items.items {
                 // Check if this item is read on server (has "read" category)
-                let is_read_on_server = item.categories.iter().any(|c| c.contains("/state/com.google/read"));
-                
+                let is_read_on_server = item
+                    .categories
+                    .iter()
+                    .any(|c| c.contains("/state/com.google/read"));
+
                 if is_read_on_server {
                     // Mark as read locally using link+title to generate ID
                     if let Some(link) = item.link() {
@@ -184,10 +199,11 @@ impl SyncManager {
                             item.title.as_deref().unwrap_or(""),
                         );
                         // Check if already read locally
-                        let already_read = cache.get(&sub.url)
+                        let already_read = cache
+                            .get(&sub.url)
                             .and_then(|f| f.items.iter().find(|i| i.id == local_id))
                             .map_or(false, |i| i.read);
-                        
+
                         if !already_read {
                             cache.set_item_read(&sub.url, &local_id, true);
                             result.items_marked_read += 1;

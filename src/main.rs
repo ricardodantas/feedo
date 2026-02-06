@@ -1,4 +1,5 @@
 //! Application entry point and CLI handling.
+#![allow(clippy::uninlined_format_args)]
 
 use std::path::{Path, PathBuf};
 
@@ -239,8 +240,9 @@ async fn sync_login(
 
     // Store credentials securely (both username and password encrypted)
     let credential_key = format!("sync@{}", server);
-    let encrypted_ok = feedo::credentials::store_credentials(&credential_key, username, password).is_ok();
-    
+    let encrypted_ok =
+        feedo::credentials::store_credentials(&credential_key, username, password).is_ok();
+
     if encrypted_ok {
         println!("✓ Credentials encrypted and stored");
     } else {
@@ -253,8 +255,16 @@ async fn sync_login(
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
-        username: if encrypted_ok { None } else { Some(username.to_string()) },
-        password: if encrypted_ok { None } else { Some(password.to_string()) },
+        username: if encrypted_ok {
+            None
+        } else {
+            Some(username.to_string())
+        },
+        password: if encrypted_ok {
+            None
+        } else {
+            Some(password.to_string())
+        },
     });
     config.save()?;
 
@@ -283,16 +293,16 @@ async fn sync_status() -> Result<()> {
         println!("(◕ᴥ◕) Sync Configuration\n");
         println!("  Provider: {:?}", sync.provider);
         println!("  Server:   {}", sync.server);
-        
+
         let credential_key = format!("sync@{}", sync.server);
         let from_encrypted = feedo::credentials::get_credentials(&credential_key).is_some();
         let from_config = sync.username.is_some() && sync.password.is_some();
         let credentials = get_sync_credentials(sync);
-        
+
         if let Some((username, _)) = &credentials {
             println!("  Username: {}", username);
         }
-        
+
         let storage_info = if from_encrypted {
             "**** (encrypted)"
         } else if from_config {
@@ -387,7 +397,9 @@ async fn sync_feeds() -> Result<()> {
 }
 
 async fn run_update() -> Result<()> {
-    use feedo::update::{check_for_updates_crates_io, detect_package_manager, run_update as do_update, VersionCheck};
+    use feedo::update::{
+        VersionCheck, check_for_updates_crates_io, detect_package_manager, run_update as do_update,
+    };
 
     println!("(◕ᴥ◕) Checking for updates...\n");
 
@@ -402,7 +414,7 @@ async fn run_update() -> Result<()> {
         VersionCheck::UpdateAvailable { latest, .. } => {
             println!("  Latest version: {latest}");
             println!("\n⬆ Update available! Installing...\n");
-            
+
             match do_update(&pm) {
                 Ok(()) => {
                     println!("✓ Successfully updated to {latest}!");

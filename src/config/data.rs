@@ -212,17 +212,24 @@ mod tests {
         // Create config with specific theme
         let mut config = Config::default();
         config.theme = Theme::new(ThemeName::Dracula);
-        
+
         // Serialize
         let json = serde_json::to_string_pretty(&config).unwrap();
         println!("Serialized config:\n{}", json);
-        
+
         // Verify theme is in JSON
-        assert!(json.contains(r#""name": "dracula""#), "Theme name not found in JSON");
-        
+        assert!(
+            json.contains(r#""name": "dracula""#),
+            "Theme name not found in JSON"
+        );
+
         // Deserialize
         let parsed: Config = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed.theme.name, ThemeName::Dracula, "Theme not preserved after roundtrip");
+        assert_eq!(
+            parsed.theme.name,
+            ThemeName::Dracula,
+            "Theme not preserved after roundtrip"
+        );
     }
 
     #[test]
@@ -236,7 +243,7 @@ mod tests {
             },
             "refresh_interval": 30
         }"#;
-        
+
         let config: Config = serde_json::from_str(json).unwrap();
         assert_eq!(config.theme.name, ThemeName::Dracula);
     }

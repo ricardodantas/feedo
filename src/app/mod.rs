@@ -41,7 +41,7 @@ impl App {
     /// Returns an error if configuration cannot be loaded or feeds cannot be initialized.
     pub async fn new() -> Result<Self> {
         let config = Config::load()?;
-        let theme = config.theme.clone();
+        let theme = config.theme;
         let sync_enabled = config.sync.is_some();
         let feeds = FeedManager::new(&config)?;
 
@@ -106,8 +106,8 @@ impl App {
         &mut self,
         terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     ) -> Result<()> {
-        use std::time::Duration;
         use crossterm::event::poll;
+        use std::time::Duration;
 
         // Track if we need initial refresh
         let mut needs_initial_refresh = self.ui.refreshing;
@@ -139,7 +139,12 @@ impl App {
 
                 // Initial refresh (one feed at a time to stay responsive)
                 if needs_initial_refresh {
-                    if let Some(idx) = self.feeds.feeds.iter().position(|f| f.last_updated.is_none()) {
+                    if let Some(idx) = self
+                        .feeds
+                        .feeds
+                        .iter()
+                        .position(|f| f.last_updated.is_none())
+                    {
                         self.feeds.refresh_feed(idx).await;
                         self.rebuild_feed_list();
                     } else {
@@ -206,7 +211,9 @@ impl App {
 
     /// Sync `feed_list_state` selection with `feed_list_index`.
     pub fn sync_feed_list_state(&mut self) {
-        self.ui.feed_list_state.select(Some(self.ui.feed_list_index));
+        self.ui
+            .feed_list_state
+            .select(Some(self.ui.feed_list_index));
     }
 
     /// Sync `items_list_state` selection with `selected_item`.
