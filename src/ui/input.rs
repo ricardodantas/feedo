@@ -73,14 +73,12 @@ impl App {
                         (self.ui.search_selected + 1) % self.ui.search_results.len();
                 }
             }
-            KeyCode::Up | KeyCode::BackTab => {
-                if !self.ui.search_results.is_empty() {
-                    self.ui.search_selected = self
-                        .ui
-                        .search_selected
-                        .checked_sub(1)
-                        .unwrap_or(self.ui.search_results.len() - 1);
-                }
+            KeyCode::Up | KeyCode::BackTab if !self.ui.search_results.is_empty() => {
+                self.ui.search_selected = self
+                    .ui
+                    .search_selected
+                    .checked_sub(1)
+                    .unwrap_or(self.ui.search_results.len() - 1);
             }
             _ => {}
         }
@@ -164,10 +162,8 @@ impl App {
             }
 
             // Update (if available)
-            KeyCode::Char('U') => {
-                if self.ui.update_available.is_some() {
-                    self.ui.mode = super::Mode::UpdateConfirm;
-                }
+            KeyCode::Char('U') if self.ui.update_available.is_some() => {
+                self.ui.mode = super::Mode::UpdateConfirm;
             }
 
             _ => {}
@@ -258,14 +254,12 @@ impl App {
                         (self.ui.discovered_feed_index + 1) % self.ui.discovered_feeds.len();
                 }
             }
-            KeyCode::Char('k') | KeyCode::Up => {
-                if !self.ui.discovered_feeds.is_empty() {
-                    self.ui.discovered_feed_index = self
-                        .ui
-                        .discovered_feed_index
-                        .checked_sub(1)
-                        .unwrap_or(self.ui.discovered_feeds.len() - 1);
-                }
+            KeyCode::Char('k') | KeyCode::Up if !self.ui.discovered_feeds.is_empty() => {
+                self.ui.discovered_feed_index = self
+                    .ui
+                    .discovered_feed_index
+                    .checked_sub(1)
+                    .unwrap_or(self.ui.discovered_feeds.len() - 1);
             }
             _ => {}
         }
