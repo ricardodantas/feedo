@@ -49,7 +49,7 @@ pub struct CachedItem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub published: Option<DateTime<Utc>>,
 
-    /// Summary or content.
+    /// Article body: full content when the feed has it, otherwise the summary.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
 

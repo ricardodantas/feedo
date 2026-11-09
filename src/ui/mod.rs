@@ -5,6 +5,7 @@
 //! - Input handling
 //! - Widget components
 
+mod html;
 pub mod input;
 mod render;
 pub mod state;

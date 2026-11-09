@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Example Atom Feed</title>
+  <id>urn:uuid:60a76c80-d399-11d9-b93C-0003939e0af6</id>
+  <updated>2026-11-02T09:00:00Z</updated>
+  <link href="https://atom.example.com/"/>
+  <entry>
+    <title>Atom full article</title>
+    <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>
+    <link href="https://atom.example.com/full"/>
+    <updated>2026-11-02T09:00:00Z</updated>
+    <summary>Atom teaser.</summary>
+    <content type="html">&lt;p&gt;Atom full body, first paragraph.&lt;/p&gt;&lt;p&gt;Atom full body, second paragraph.&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <title>Atom out-of-line content</title>
+    <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6b</id>
+    <link href="https://atom.example.com/out-of-line"/>
+    <updated>2026-11-02T09:00:00Z</updated>
+    <summary>Only the summary is inline.</summary>
+    <content type="text/html" src="https://atom.example.com/out-of-line.html"/>
+  </entry>
+</feed>
