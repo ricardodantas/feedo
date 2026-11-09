@@ -334,9 +334,8 @@ impl App {
                     let _ = write!(text, "  📅 {}\n\n", date.format("%Y-%m-%d %H:%M"));
                 }
 
-                if let Some(summary) = &item.summary {
-                    // Strip HTML tags
-                    let clean = strip_html(summary);
+                if let Some(body) = &item.summary {
+                    let clean = super::html::html_to_text(body);
                     text.push_str("  ");
                     text.push_str(&clean.replace('\n', "\n  "));
                 }
@@ -1378,25 +1377,6 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             Constraint::Percentage((100 - percent_x) / 2),
         ])
         .split(popup_layout[1])[1]
-}
-
-/// Strip HTML tags from a string.
-fn strip_html(s: &str) -> String {
-    let clean = s
-        .replace("<p>", "\n")
-        .replace("</p>", "\n")
-        .replace("<br>", "\n")
-        .replace("<br/>", "\n")
-        .replace("<br />", "\n")
-        .replace("&nbsp;", " ")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"");
-
-    regex_lite::Regex::new(r"<[^>]+>")
-        .map(|re| re.replace_all(&clean, "").to_string())
-        .unwrap_or(clean)
 }
 
 impl App {

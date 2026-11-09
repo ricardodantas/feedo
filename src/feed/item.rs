@@ -17,7 +17,12 @@ pub struct FeedItem {
     /// Publication date (if available).
     pub published: Option<DateTime<Utc>>,
 
-    /// Summary or content (if available).
+    /// Article body (HTML or plain text), if available.
+    ///
+    /// The full content when the feed provides it (RSS `<content:encoded>`,
+    /// Atom `<content>`, JSON Feed `content_html`), otherwise the summary
+    /// (RSS `<description>`, Atom `<summary>`). The name is kept for API and
+    /// cache compatibility.
     pub summary: Option<String>,
 
     /// Whether the item has been read.

@@ -1,0 +1,14 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Example JSON Feed",
+  "home_page_url": "https://json.example.com/",
+  "items": [
+    {
+      "id": "1",
+      "url": "https://json.example.com/1",
+      "title": "JSON full article",
+      "summary": "JSON teaser.",
+      "content_html": "<p>JSON full body.</p>"
+    }
+  ]
+}
