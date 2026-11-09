@@ -69,7 +69,7 @@
 | ☁️ **Cloud Sync** | Sync with FreshRSS, Miniflux, Inoreader via Google Reader API |
 | 📁 **Smart Folders** | Organize feeds into collapsible folders with custom emoji icons |
 | 🔎 **Instant Search** | Find articles across all feeds with real-time filtering |
-| 🎭 **15 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
+| 🎭 **17 Themes** | Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, Solarized, and more |
 | 📥 **OPML Support** | Import/export subscriptions for easy migration |
 | 📤 **Social Sharing** | Share articles to X, Mastodon, and Bluesky with one keypress |
 | ⚡ **Blazingly Fast** | Async feed fetching with Tokio — no UI blocking |
@@ -440,7 +440,7 @@ After running `feedo sync login`, your config will include:
 
 ### Theme Colors
 
-Feedo comes with **15 popular themes** from the terminal/editor world:
+Feedo comes with **17 popular themes** from the terminal/editor world:
 
 | Theme | Description |
 |-------|-------------|
@@ -459,6 +459,8 @@ Feedo comes with **15 popular themes** from the terminal/editor world:
 | `kanagawa` | 🌊 Inspired by Hokusai's art |
 | `everforest` | 🌲 Comfortable green forest |
 | `cyberpunk` | 💜 Neon-soaked futuristic |
+| `midnight-commander` | 🗂️ Classic file manager blue and cyan |
+| `msx` | 🕹️ Retro MSX home computer palette |
 
 **Example config:**
 ```json

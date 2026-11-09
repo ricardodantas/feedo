@@ -64,7 +64,7 @@
 //! - **Beautiful TUI** — Clean three-panel interface with ratatui
 //! - **Folder Organization** — Group feeds with custom emoji icons
 //! - **Instant Search** — Find articles across all feeds
-//! - **15 Themes** — Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, and more
+//! - **17 Themes** — Dracula, Nord, Catppuccin, Gruvbox, Tokyo Night, and more
 //! - **OPML Support** — Import/export for easy migration
 //! - **Social Sharing** — Share articles to X, Mastodon, and Bluesky
 //! - **Async** — Non-blocking feed fetching with Tokio

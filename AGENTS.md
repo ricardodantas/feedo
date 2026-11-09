@@ -32,7 +32,7 @@ feedo/
 | Language | Rust 2024 edition | Memory safety, performance |
 | Async | Tokio | Non-blocking feed fetching |
 | TUI | ratatui + crossterm | Modern, well-maintained |
-| Themes | ratatui-themes | Shared 15 themes with Hazelnut |
+| Themes | ratatui-themes | Shared 17 themes with Hazelnut |
 | RSS Parsing | feed-rs | Handles RSS/Atom/JSON Feed |
 | HTTP | reqwest | Async, rustls for TLS |
 | Config | serde_json | Human-readable config |

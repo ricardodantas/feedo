@@ -2,7 +2,7 @@
 
 use ratatui::{
     prelude::*,
-    widgets::{Block, BorderType, Borders, Clear, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, BorderType, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap},
 };
 
 use super::state::FeedListItem;
@@ -552,7 +552,10 @@ impl App {
                 .title_bottom(Line::from(" ↑↓ navigate │ ↵ apply │ Esc cancel ").centered()),
         );
 
-        frame.render_widget(theme_list, popup_area);
+        // Stateful render scrolls the list so the selected theme stays visible
+        // when there are more themes than rows in the popup.
+        let mut list_state = ListState::default().with_selected(Some(self.ui.theme_picker_index));
+        frame.render_stateful_widget(theme_list, popup_area, &mut list_state);
     }
 
     #[allow(clippy::too_many_lines)]
@@ -1534,5 +1537,67 @@ impl App {
             );
 
         frame.render_widget(paragraph, banner_area);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ratatui::{Terminal, backend::TestBackend};
+    use ratatui_themes::{Theme, ThemeName};
+
+    use super::Mode;
+    use crate::app::App;
+    use crate::config::Config;
+    use crate::feed::FeedManager;
+    use crate::ui::UiState;
+
+    /// Render the theme picker on a standard 80x24 terminal with `selected` highlighted.
+    fn render_theme_picker_with(selected: ThemeName) -> String {
+        let config = Config {
+            folders: Vec::new(),
+            feeds: Vec::new(),
+            ..Config::default()
+        };
+        let feeds = FeedManager::new(&config).expect("feed manager builds without network");
+        let theme_picker_index = ThemeName::all()
+            .iter()
+            .position(|&t| t == selected)
+            .expect("selected theme is listed in ThemeName::all()");
+        let mut app = App {
+            config,
+            feeds,
+            ui: UiState {
+                mode: Mode::ThemePicker,
+                theme_picker_index,
+                ..UiState::default()
+            },
+            theme: Theme::new(selected),
+        };
+
+        let mut terminal = Terminal::new(TestBackend::new(80, 24)).expect("test terminal");
+        terminal
+            .draw(|frame| app.render(frame))
+            .expect("render succeeds");
+
+        terminal
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .map(ratatui::buffer::Cell::symbol)
+            .collect()
+    }
+
+    #[test]
+    fn theme_picker_should_show_selected_theme_when_it_is_last_in_list() {
+        let last = *ThemeName::all().last().expect("at least one theme");
+
+        let screen = render_theme_picker_with(last);
+
+        assert!(
+            screen.contains(last.display_name()),
+            "{} is not visible in the theme picker",
+            last.display_name()
+        );
     }
 }
