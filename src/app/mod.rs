@@ -42,7 +42,18 @@ impl App {
     // Kept async: it is public API on crates.io, and removing `async` would break callers.
     #[allow(clippy::unused_async_trait_impl)]
     pub async fn new() -> Result<Self> {
-        let config = Config::load()?;
+        Self::with_config(Config::load()?)
+    }
+
+    /// Create a new application instance from an already loaded configuration.
+    ///
+    /// Changes made in the UI are saved back to the file the configuration
+    /// was loaded from (see [`Config::load_from`]).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if feeds cannot be initialized.
+    pub fn with_config(config: Config) -> Result<Self> {
         let theme = config.theme;
         let sync_enabled = config.sync.is_some();
         let feeds = FeedManager::new(&config)?;

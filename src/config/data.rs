@@ -1,8 +1,11 @@
 //! Configuration data structures.
 
-use std::{env, fs, path::PathBuf};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::WrapErr};
 use serde::{Deserialize, Serialize};
 
 use crate::sync::SyncConfig;
@@ -30,6 +33,14 @@ pub struct Config {
     /// Sync configuration (optional).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sync: Option<SyncConfig>,
+
+    /// File this configuration was loaded from, and is saved back to.
+    ///
+    /// Not stored in the file itself. `None` means the default location
+    /// ([`Config::config_path`]). Public so that
+    /// `Config { .., ..Config::default() }` keeps working for library users.
+    #[serde(skip)]
+    pub path: Option<PathBuf>,
 }
 
 /// A folder containing multiple feeds.
@@ -62,6 +73,25 @@ pub struct FeedConfig {
     /// Sync ID from server (e.g., "feed/123" for Google Reader API).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sync_id: Option<String>,
+}
+
+/// File name of the config file inside [`Config::config_dir`].
+const CONFIG_FILE_NAME: &str = "config.json";
+
+/// Warn about a `config.toml` next to the real config file.
+///
+/// Feedo reads JSON from `config.json`. Older website docs said
+/// `config.toml`, so people created that file and wondered why nothing
+/// changed (issue #8). Returns the warning to show, if any.
+fn ignored_toml_warning(config_dir: &Path) -> Option<String> {
+    let toml = config_dir.join("config.toml");
+    toml.is_file().then(|| {
+        format!(
+            "found {}, but feedo reads its settings from {} (JSON); the TOML file is ignored",
+            toml.display(),
+            config_dir.join(CONFIG_FILE_NAME).display()
+        )
+    })
 }
 
 const fn default_true() -> bool {
@@ -108,6 +138,7 @@ impl Default for Config {
             theme: Theme::default(),
             refresh_interval: default_refresh_interval(),
             sync: None,
+            path: None,
         }
     }
 }
@@ -135,7 +166,7 @@ impl Config {
     /// Get the configuration file path.
     #[must_use]
     pub fn config_path() -> Option<PathBuf> {
-        Self::config_dir().map(|dir| dir.join("config.json"))
+        Self::config_dir().map(|dir| dir.join(CONFIG_FILE_NAME))
     }
 
     /// Get the data directory path (for caches, read states, etc.).
@@ -144,39 +175,88 @@ impl Config {
         Self::config_dir().map(|dir| dir.join("data"))
     }
 
-    /// Load configuration from disk, creating default if not exists.
+    /// Load configuration from the default location, creating it if missing.
+    ///
+    /// The default location is [`Config::config_path`]. Use
+    /// [`Config::load_from`] to read a different file.
     ///
     /// # Errors
     ///
     /// Returns an error if the configuration file cannot be read or parsed.
     pub fn load() -> Result<Self> {
-        let path = Self::config_path()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Could not determine config directory"))?;
+        let dir = Self::config_dir()
+            .ok_or_else(|| color_eyre::eyre::eyre!("could not determine config directory"))?;
+
+        if let Some(warning) = ignored_toml_warning(&dir) {
+            tracing::warn!("{warning}");
+        }
+
+        Self::load_from(dir.join(CONFIG_FILE_NAME))
+    }
+
+    /// Load configuration from `path`, creating a default config there if the
+    /// file does not exist yet.
+    ///
+    /// The returned config remembers `path`, so [`Config::save`] writes back
+    /// to the same file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file exists but cannot be read or is not valid
+    /// JSON, or if a missing file cannot be created.
+    pub fn load_from(path: impl Into<PathBuf>) -> Result<Self> {
+        let path = path.into();
 
         if path.exists() {
-            let content = fs::read_to_string(&path)?;
-            let config: Self = serde_json::from_str(&content)?;
+            let content = fs::read_to_string(&path)
+                .wrap_err_with(|| format!("failed to read config file {}", path.display()))?;
+            let mut config: Self = serde_json::from_str(&content).wrap_err_with(|| {
+                format!(
+                    "failed to parse config file {} (feedo config files are JSON)",
+                    path.display()
+                )
+            })?;
+            config.path = Some(path);
             Ok(config)
         } else {
-            let config = Self::default();
+            let config = Self {
+                path: Some(path),
+                ..Self::default()
+            };
             config.save()?;
             Ok(config)
         }
     }
 
+    /// The file this configuration is saved to.
+    ///
+    /// This is the file it was loaded from, or the default location for a
+    /// config that was not loaded from disk.
+    #[must_use]
+    pub fn file_path(&self) -> Option<PathBuf> {
+        self.path.clone().or_else(Self::config_path)
+    }
+
     /// Save configuration to disk.
+    ///
+    /// Writes to [`Config::file_path`], creating parent directories as needed.
     ///
     /// # Errors
     ///
     /// Returns an error if the configuration file cannot be written.
     pub fn save(&self) -> Result<()> {
-        let dir = Self::config_dir()
-            .ok_or_else(|| color_eyre::eyre::eyre!("Could not determine config directory"))?;
-        fs::create_dir_all(&dir)?;
+        let path = self
+            .file_path()
+            .ok_or_else(|| color_eyre::eyre::eyre!("could not determine config directory"))?;
 
-        let path = dir.join("config.json");
+        if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+            fs::create_dir_all(parent)
+                .wrap_err_with(|| format!("failed to create {}", parent.display()))?;
+        }
+
         let content = serde_json::to_string_pretty(self)?;
-        fs::write(path, content)?;
+        fs::write(&path, content)
+            .wrap_err_with(|| format!("failed to write config file {}", path.display()))?;
         Ok(())
     }
 
@@ -191,6 +271,89 @@ impl Config {
 mod tests {
     use super::*;
     use ratatui_themes::ThemeName;
+
+    /// A fresh, empty directory under the system temp dir, unique per test.
+    fn temp_dir(name: &str) -> PathBuf {
+        let dir = env::temp_dir().join(format!("feedo-test-{}-{name}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("create temp dir");
+        dir
+    }
+
+    #[test]
+    fn load_from_should_read_the_given_file() {
+        let dir = temp_dir("load-from");
+        let path = dir.join("custom.json");
+        fs::write(
+            &path,
+            r#"{"feeds": [{"name": "xkcd", "url": "https://xkcd.com/rss.xml"}], "refresh_interval": 5}"#,
+        )
+        .unwrap();
+
+        let config = Config::load_from(&path).expect("config loads");
+
+        assert_eq!(config.feeds[0].name, "xkcd");
+        assert_eq!(config.refresh_interval, 5);
+    }
+
+    #[test]
+    fn save_should_write_back_to_the_file_it_was_loaded_from() {
+        let dir = temp_dir("save-back");
+        let path = dir.join("custom.json");
+        fs::write(&path, r#"{"refresh_interval": 5}"#).unwrap();
+
+        let mut config = Config::load_from(&path).unwrap();
+        config.refresh_interval = 42;
+        config.save().unwrap();
+
+        let reloaded = Config::load_from(&path).unwrap();
+        assert_eq!(reloaded.refresh_interval, 42);
+    }
+
+    #[test]
+    fn load_from_should_create_a_default_config_when_the_file_is_missing() {
+        let dir = temp_dir("create-missing");
+        let path = dir.join("nested").join("new.json");
+
+        let config = Config::load_from(&path).unwrap();
+
+        assert!(
+            path.exists(),
+            "default config written to {}",
+            path.display()
+        );
+        assert_eq!(config.total_feeds(), Config::default().total_feeds());
+    }
+
+    #[test]
+    fn load_from_should_name_the_file_when_it_is_not_json() {
+        let dir = temp_dir("not-json");
+        let path = dir.join("config.toml");
+        fs::write(&path, "theme = \"dracula\"\n").unwrap();
+
+        let err = Config::load_from(&path).expect_err("TOML is rejected");
+
+        let message = format!("{err:#}");
+        assert!(message.contains("config.toml"), "{message}");
+        assert!(message.contains("JSON"), "{message}");
+    }
+
+    #[test]
+    fn ignored_toml_warning_should_fire_when_config_toml_sits_next_to_config_json() {
+        let dir = temp_dir("stray-toml");
+        fs::write(dir.join("config.toml"), "theme = \"dracula\"\n").unwrap();
+
+        let warning = ignored_toml_warning(&dir).expect("warning for stray config.toml");
+
+        assert!(warning.contains("config.json"), "{warning}");
+    }
+
+    #[test]
+    fn ignored_toml_warning_should_stay_quiet_without_config_toml() {
+        let dir = temp_dir("no-toml");
+
+        assert_eq!(ignored_toml_warning(&dir), None);
+    }
 
     #[test]
     fn test_default_config() {

@@ -89,6 +89,9 @@ Themes are managed by the `ratatui-themes` crate (shared with Hazelnut).
 # Launch the TUI
 feedo
 
+# Use a different config file (global flag, works with every command)
+feedo --config path/to/config.json
+
 # Check for updates and install
 feedo update
 

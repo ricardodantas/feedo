@@ -74,7 +74,11 @@ feedo
 
 ## Configuration
 
-Config file location: `~/.config/feedo/config.toml`
+Config file location: `~/.config/feedo/config.json` (JSON, not TOML)
+
+Feedo uses `~/.config/feedo/` on all platforms for consistency.
+
+Use a different config file with `feedo --config <FILE>` (or `-c <FILE>`); it works with every command. The article cache and sync credentials stay in `~/.config/feedo/`.
 
 ## Links
 
