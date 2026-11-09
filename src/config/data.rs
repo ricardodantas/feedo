@@ -247,4 +247,20 @@ mod tests {
         let config: Config = serde_json::from_str(json).unwrap();
         assert_eq!(config.theme.name, ThemeName::Dracula);
     }
+
+    #[test]
+    fn config_should_load_themes_added_in_ratatui_themes_0_4() {
+        for (slug, expected) in [
+            ("midnight-commander", ThemeName::MidnightCommander),
+            ("msx", ThemeName::Msx),
+        ] {
+            let json = format!(
+                r#"{{"folders": [], "feeds": [], "theme": {{"name": "{slug}"}}, "refresh_interval": 30}}"#
+            );
+
+            let config: Config = serde_json::from_str(&json).expect("config with new theme parses");
+
+            assert_eq!(config.theme.name, expected, "theme slug {slug}");
+        }
+    }
 }

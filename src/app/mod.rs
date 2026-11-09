@@ -39,6 +39,8 @@ impl App {
     /// # Errors
     ///
     /// Returns an error if configuration cannot be loaded or feeds cannot be initialized.
+    // Kept async: it is public API on crates.io, and removing `async` would break callers.
+    #[allow(clippy::unused_async_trait_impl)]
     pub async fn new() -> Result<Self> {
         let config = Config::load()?;
         let theme = config.theme;

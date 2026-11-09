@@ -295,8 +295,8 @@ mod tests {
         // Should default to cargo on this system
         let pm = detect_package_manager();
         // Just verify it doesn't panic and returns something
-        assert!(!pm.name().is_empty());
-        assert!(!pm.update_command().is_empty());
+        assert_ne!(pm.name(), "");
+        assert_ne!(pm.update_command(), "");
     }
 
     #[tokio::test]
@@ -306,15 +306,15 @@ mod tests {
         // Should either succeed or fail gracefully, not panic
         match result {
             VersionCheck::UpdateAvailable { latest, current } => {
-                assert!(!latest.is_empty());
-                assert!(!current.is_empty());
+                assert_ne!(latest, "");
+                assert_ne!(current, "");
             }
             VersionCheck::UpToDate => {
                 // That's fine too
             }
             VersionCheck::CheckFailed(msg) => {
                 // Network issues are acceptable in tests
-                assert!(!msg.is_empty());
+                assert_ne!(msg, "");
             }
         }
     }

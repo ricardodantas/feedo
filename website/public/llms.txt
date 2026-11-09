@@ -2,7 +2,7 @@
 
 > A beautiful terminal RSS reader inspired by Reeder
 
-Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal user interface). It features vim-style keybindings, 15 stunning color themes, offline reading support, GReader sync, and automatic feed discovery.
+Feedo is a terminal-based RSS/Atom feed reader with a gorgeous TUI (terminal user interface). It features vim-style keybindings, 17 stunning color themes, offline reading support, GReader sync, and automatic feed discovery.
 
 ## Quick Facts
 
@@ -36,7 +36,7 @@ Pre-built binaries available at: https://github.com/ricardodantas/feedo/releases
 - **Feed Discovery**: Auto-detect RSS/Atom feeds from any URL
 - **Offline Mode**: Articles cached locally for offline reading
 - **Smart Folders**: Organize feeds into collapsible folders with emoji icons
-- **15 Themes**: Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, and more
+- **17 Themes**: Dracula, Nord, Tokyo Night, Catppuccin, Gruvbox, and more
 - **Instant Search**: Real-time fuzzy search across all feeds
 - **Vim Keybindings**: j/k navigation, / for search, familiar shortcuts
 - **GReader Sync**: Sync with FreshRSS, Miniflux, and other GReader-compatible services
