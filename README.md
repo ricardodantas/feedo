@@ -129,6 +129,9 @@ feedo --import subscriptions.opml
 # Backup your feeds
 feedo --export backup.opml
 
+# Use a different config file (works with every command)
+feedo --config ~/dotfiles/feedo.json
+
 # Show help
 feedo --help
 ```
@@ -254,6 +257,19 @@ Feedo uses `~/.config/feedo/` on **all platforms** for consistency:
 | Linux | `~/.config/feedo/config.json` |
 | macOS | `~/.config/feedo/config.json` |
 | Windows | `%USERPROFILE%\.config\feedo\config.json` |
+
+The config file is **JSON**. Feedo ignores a `config.toml` and prints a warning if it finds one next to `config.json`.
+
+### Custom Config File
+
+Pass `--config <FILE>` (or `-c <FILE>`) to use a different config file, for example one kept in your dotfiles:
+
+```bash
+feedo --config ~/dotfiles/feedo.json
+feedo -c ~/dotfiles/feedo.json sync
+```
+
+If the file doesn't exist yet, Feedo creates it with the default feeds. Changes you make in the app are saved back to that file. The flag only moves the config file: the article cache (`~/.config/feedo/data/`) and encrypted sync credentials (`~/.config/feedo/.credentials`) stay in the default directory.
 
 ### Example Configuration
 

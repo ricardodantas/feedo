@@ -159,18 +159,31 @@ const baseUrl = import.meta.env.BASE_URL;
 
       <section id="config-file">
         <h2>Config File</h2>
-        <p>Feedo stores its configuration at <code>~/.config/feedo/config.toml</code>:</p>
-        <pre><code># Theme (see Themes page for all options)
-theme = "dracula"
+        <p>Feedo stores its configuration as JSON at <code>~/.config/feedo/config.json</code> on every platform (<code>%USERPROFILE%\.config\feedo\config.json</code> on Windows). It is created with a few starter feeds on first launch:</p>
+        <pre><code>{`{
+  "folders": [
+    {
+      "name": "Tech",
+      "icon": "💻",
+      "expanded": true,
+      "feeds": [
+        { "name": "Hacker News", "url": "https://hnrss.org/frontpage" }
+      ]
+    }
+  ],
+  "feeds": [
+    { "name": "xkcd", "url": "https://xkcd.com/rss.xml" }
+  ],
+  "theme": { "name": "dracula" },
+  "refresh_interval": 30
+}`}</code></pre>
+        <p><code>refresh_interval</code> is in minutes (<code>0</code> means refresh manually). A <code>config.toml</code> is ignored; Feedo prints a warning if it finds one.</p>
 
-# Refresh interval in minutes
-refresh_interval = 30
-
-# Maximum articles to keep per feed
-max_articles = 100
-
-# Open links in browser
-browser = "default"</code></pre>
+        <h3>Custom Config File</h3>
+        <p>Use <code>--config &lt;FILE&gt;</code> (or <code>-c</code>) with any command to use a different config file. Feedo creates it with defaults if it doesn't exist and saves changes back to it:</p>
+        <pre><code>feedo --config ~/dotfiles/feedo.json
+feedo -c ~/dotfiles/feedo.json sync</code></pre>
+        <p>The article cache and encrypted sync credentials stay in <code>~/.config/feedo/</code>.</p>
       </section>
 
       <section id="themes">
@@ -178,7 +191,7 @@ browser = "default"</code></pre>
         <p>Feedo comes with 17 beautiful themes. Change themes by:</p>
         <ul>
           <li>Pressing <code>t</code> in the TUI for live preview</li>
-          <li>Setting <code>theme = "theme-name"</code> in config</li>
+          <li>Setting <code>"theme": {`{ "name": "theme-name" }`}</code> in <code>config.json</code></li>
         </ul>
         <p>See the <a href={`${baseUrl}themes`}>Themes page</a> for all available options.</p>
       </section>
@@ -188,10 +201,10 @@ browser = "default"</code></pre>
         <p>Migrate your feeds from other RSS readers:</p>
         
         <h3>Import</h3>
-        <pre><code>feedo import feeds.opml</code></pre>
+        <pre><code>feedo --import feeds.opml</code></pre>
 
         <h3>Export</h3>
-        <pre><code>feedo export > feeds.opml</code></pre>
+        <pre><code>feedo --export feeds.opml</code></pre>
       </section>
     </div>
   </div>

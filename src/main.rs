@@ -20,21 +20,24 @@ async fn main() -> Result<()> {
         .init();
 
     // Parse CLI arguments
-    match parse_args()? {
-        Command::Run => run_tui().await,
-        Command::Import(path) => import_opml(&path),
-        Command::Export(path) => export_opml(&path),
-        Command::Sync => sync_feeds().await,
+    let Cli { config, command } = parse_args()?;
+    let config = config.as_deref();
+
+    match command {
+        Command::Run => run_tui(config).await,
+        Command::Import(path) => import_opml(config, &path),
+        Command::Export(path) => export_opml(config, &path),
+        Command::Sync => sync_feeds(config).await,
         Command::SyncLogin {
             server,
             username,
             password,
             provider,
-        } => sync_login(&server, &username, &password, provider).await,
-        Command::SyncStatus => sync_status().await,
+        } => sync_login(config, &server, &username, &password, provider).await,
+        Command::SyncStatus => sync_status(config).await,
         Command::Update => run_update().await,
         Command::Help => {
-            print_help();
+            print_help(config);
             Ok(())
         }
         Command::Version => {
@@ -44,7 +47,17 @@ async fn main() -> Result<()> {
     }
 }
 
+/// Parsed command line: global options plus the command to run.
+#[derive(Debug, PartialEq, Eq)]
+struct Cli {
+    /// Config file given with `--config`/`-c`, overriding the default location.
+    config: Option<PathBuf>,
+    /// The command to run.
+    command: Command,
+}
+
 /// CLI commands
+#[derive(Debug, PartialEq, Eq)]
 enum Command {
     Run,
     Import(PathBuf),
@@ -62,42 +75,76 @@ enum Command {
     Version,
 }
 
-fn parse_args() -> Result<Command> {
-    let args: Vec<String> = std::env::args().collect();
+fn parse_args() -> Result<Cli> {
+    parse_args_from(std::env::args().skip(1))
+}
 
-    if args.len() == 1 {
-        return Ok(Command::Run);
+/// Parse command line arguments (without the program name).
+///
+/// `--config <FILE>`, `--config=<FILE>` and `-c <FILE>` are global and may
+/// appear anywhere; everything else is parsed as before.
+fn parse_args_from(args: impl IntoIterator<Item = String>) -> Result<Cli> {
+    let mut config = None;
+    let mut args_iter = args.into_iter();
+    let mut args = Vec::new();
+
+    while let Some(arg) = args_iter.next() {
+        if arg == "-c" || arg == "--config" {
+            let path = args_iter.next().ok_or_else(|| {
+                color_eyre::eyre::eyre!("Missing value for {arg}\nUsage: feedo --config <FILE>")
+            })?;
+            config = Some(PathBuf::from(path));
+        } else if let Some(path) = arg.strip_prefix("--config=") {
+            if path.is_empty() {
+                return Err(color_eyre::eyre::eyre!(
+                    "Missing value for --config\nUsage: feedo --config <FILE>"
+                ));
+            }
+            config = Some(PathBuf::from(path));
+        } else {
+            args.push(arg);
+        }
     }
 
-    match args[1].as_str() {
+    let command = parse_command(&args)?;
+    Ok(Cli { config, command })
+}
+
+/// Parse the command from arguments with global options already removed.
+fn parse_command(args: &[String]) -> Result<Command> {
+    let Some(first) = args.first() else {
+        return Ok(Command::Run);
+    };
+
+    match first.as_str() {
         "-h" | "--help" => Ok(Command::Help),
         "-v" | "--version" => Ok(Command::Version),
         "-i" | "--import" => {
             let path = args
-                .get(2)
+                .get(1)
                 .ok_or_else(|| color_eyre::eyre::eyre!("Missing OPML file path"))?;
             Ok(Command::Import(PathBuf::from(path)))
         }
         "-e" | "--export" => {
             let path = args
-                .get(2)
+                .get(1)
                 .ok_or_else(|| color_eyre::eyre::eyre!("Missing output file path"))?;
             Ok(Command::Export(PathBuf::from(path)))
         }
         "sync" => {
-            if args.len() > 2 {
-                match args[2].as_str() {
+            if args.len() > 1 {
+                match args[1].as_str() {
                     "login" => {
                         // Parse: feedo sync login <server> <username> <password> [--provider freshrss|miniflux|greader]
-                        let server = args.get(3)
+                        let server = args.get(2)
                             .ok_or_else(|| color_eyre::eyre::eyre!("Missing server URL\nUsage: feedo sync login <server> <username> <password>"))?
                             .clone();
                         let username = args
-                            .get(4)
+                            .get(3)
                             .ok_or_else(|| color_eyre::eyre::eyre!("Missing username"))?
                             .clone();
                         let password = args
-                            .get(5)
+                            .get(4)
                             .ok_or_else(|| color_eyre::eyre::eyre!("Missing password"))?
                             .clone();
 
@@ -136,9 +183,11 @@ fn parse_args() -> Result<Command> {
     }
 }
 
-fn print_help() {
-    let config_path =
-        Config::config_path().map_or_else(|| "Unknown".to_string(), |p| p.display().to_string());
+fn print_help(config: Option<&Path>) {
+    let config_path = config
+        .map(Path::to_path_buf)
+        .or_else(Config::config_path)
+        .map_or_else(|| "Unknown".to_string(), |p| p.display().to_string());
 
     println!(
         r"{}
@@ -147,9 +196,11 @@ A stunning terminal RSS reader — your news, your way.
 
 USAGE:
     feedo [OPTIONS]
-    feedo [COMMAND]
+    feedo [OPTIONS] [COMMAND]
 
 OPTIONS:
+    -c, --config <FILE>    Use this config file instead of the default
+                           (JSON; created with defaults if missing)
     -i, --import <FILE>    Import feeds from OPML file
     -e, --export <FILE>    Export feeds to OPML file
     -h, --help             Show this help message
@@ -186,6 +237,7 @@ KEYBINDINGS:
 
 CONFIG:
     {config_path}
+    Article cache and sync credentials stay in ~/.config/feedo/
 
 HOMEPAGE:
     https://github.com/ricardodantas/feedo
@@ -198,27 +250,33 @@ fn print_version() {
     println!("{}", env!("CARGO_PKG_VERSION"));
 }
 
-async fn run_tui() -> Result<()> {
-    let mut app = App::new().await?;
+/// Load the config from `--config` if given, otherwise from the default path.
+fn load_config(path: Option<&Path>) -> Result<Config> {
+    path.map_or_else(Config::load, Config::load_from)
+}
+
+async fn run_tui(config: Option<&Path>) -> Result<()> {
+    let mut app = App::with_config(load_config(config)?)?;
     app.run().await
 }
 
-fn import_opml(path: &Path) -> Result<()> {
-    let mut config = Config::load()?;
+fn import_opml(config: Option<&Path>, path: &Path) -> Result<()> {
+    let mut config = load_config(config)?;
     let count = feedo::opml::import(path, &mut config)?;
     config.save()?;
     println!("(◕ᴥ◕) Imported {count} feeds from {}", path.display());
     Ok(())
 }
 
-fn export_opml(path: &Path) -> Result<()> {
-    let config = Config::load()?;
+fn export_opml(config: Option<&Path>, path: &Path) -> Result<()> {
+    let config = load_config(config)?;
     feedo::opml::export(&config, path)?;
     println!("(◕ᴥ◕) Exported feeds to {}", path.display());
     Ok(())
 }
 
 async fn sync_login(
+    config_path: Option<&Path>,
     server: &str,
     username: &str,
     password: &str,
@@ -251,7 +309,7 @@ async fn sync_login(
     }
 
     // Save to config (credentials only stored if encryption failed)
-    let mut config = Config::load()?;
+    let mut config = load_config(config_path)?;
     config.sync = Some(SyncConfig {
         provider,
         server: server.to_string(),
@@ -286,8 +344,8 @@ fn get_sync_credentials(sync: &SyncConfig) -> Option<(String, String)> {
     }
 }
 
-async fn sync_status() -> Result<()> {
-    let config = Config::load()?;
+async fn sync_status(config: Option<&Path>) -> Result<()> {
+    let config = load_config(config)?;
 
     if let Some(sync) = &config.sync {
         println!("(◕ᴥ◕) Sync Configuration\n");
@@ -344,8 +402,8 @@ async fn sync_status() -> Result<()> {
     Ok(())
 }
 
-async fn sync_feeds() -> Result<()> {
-    let mut config = Config::load()?;
+async fn sync_feeds(config: Option<&Path>) -> Result<()> {
+    let mut config = load_config(config)?;
 
     let sync = config.sync.clone().ok_or_else(|| {
         color_eyre::eyre::eyre!("No sync configured. Run 'feedo sync login' first.")
@@ -438,4 +496,95 @@ async fn run_update() -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(args: &[&str]) -> Result<Cli> {
+        parse_args_from(args.iter().map(ToString::to_string))
+    }
+
+    #[test]
+    fn no_arguments_should_run_the_tui_with_the_default_config() {
+        let cli = parse(&[]).unwrap();
+
+        assert_eq!(cli.command, Command::Run);
+        assert_eq!(cli.config, None);
+    }
+
+    #[test]
+    fn config_flag_should_set_the_config_path_for_the_tui() {
+        let cli = parse(&["--config", "/tmp/feedo.json"]).unwrap();
+
+        assert_eq!(cli.command, Command::Run);
+        assert_eq!(cli.config, Some(PathBuf::from("/tmp/feedo.json")));
+    }
+
+    #[test]
+    fn short_config_flag_should_work_before_a_subcommand() {
+        let cli = parse(&["-c", "work.json", "sync", "status"]).unwrap();
+
+        assert_eq!(cli.command, Command::SyncStatus);
+        assert_eq!(cli.config, Some(PathBuf::from("work.json")));
+    }
+
+    #[test]
+    fn config_flag_should_work_after_a_subcommand() {
+        let cli = parse(&["sync", "--config", "work.json"]).unwrap();
+
+        assert_eq!(cli.command, Command::Sync);
+        assert_eq!(cli.config, Some(PathBuf::from("work.json")));
+    }
+
+    #[test]
+    fn config_flag_should_accept_the_equals_form() {
+        let cli = parse(&["--config=work.json", "--import", "feeds.opml"]).unwrap();
+
+        assert_eq!(cli.command, Command::Import(PathBuf::from("feeds.opml")));
+        assert_eq!(cli.config, Some(PathBuf::from("work.json")));
+    }
+
+    #[test]
+    fn config_flag_without_a_value_should_be_an_error() {
+        let err = parse(&["--config"]).expect_err("missing value is rejected");
+
+        assert!(err.to_string().contains("--config"), "{err}");
+    }
+
+    #[test]
+    fn sync_login_should_keep_its_positional_arguments_with_config() {
+        let cli = parse(&[
+            "-c",
+            "work.json",
+            "sync",
+            "login",
+            "https://rss.example.com/api/greader.php",
+            "alice",
+            "secret",
+            "--provider",
+            "freshrss",
+        ])
+        .unwrap();
+
+        assert_eq!(
+            cli.command,
+            Command::SyncLogin {
+                server: "https://rss.example.com/api/greader.php".to_string(),
+                username: "alice".to_string(),
+                password: "secret".to_string(),
+                provider: SyncProvider::FreshRSS,
+            }
+        );
+        assert_eq!(cli.config, Some(PathBuf::from("work.json")));
+    }
+
+    #[test]
+    fn existing_flags_should_keep_working_without_config() {
+        let cli = parse(&["--export", "backup.opml"]).unwrap();
+
+        assert_eq!(cli.command, Command::Export(PathBuf::from("backup.opml")));
+        assert_eq!(cli.config, None);
+    }
 }
